@@ -1,0 +1,105 @@
+:root {
+  color-scheme: dark;
+  --canvas: #0c0f0d;
+  --surface: #121612;
+  --surface-raised: #171c17;
+  --surface-inset: #0f130f;
+  --line: #2a312a;
+  --line-strong: #606a60;
+  --ink: #f1eee6;
+  --ink-soft: #c4c8bf;
+  --muted: #8e968b;
+  --signal: #e3a13a;
+  --signal-ink: #181006;
+  --positive: #88af72;
+  --negative: #d77b69;
+  --focus: #f3bd65;
+  --radius: 3px;
+  --sidebar: 216px;
+  --content-max: 1320px;
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+  min-width: 320px;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+[tabindex="-1"]:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

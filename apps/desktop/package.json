@@ -1,0 +1,73 @@
+{
+  "name": "@trueedge/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline Electron host for the TrueEdge blackjack training lab",
+  "author": "TrueEdge",
+  "type": "commonjs",
+  "main": "src/main.cjs",
+  "scripts": {
+    "build:web": "pnpm --filter @trueedge/web build && pnpm run stage:web",
+    "stage:web": "node scripts/stage-web.mjs",
+    "dev": "pnpm run build:web && electron .",
+    "pack": "pnpm run build:web && electron-builder --dir --publish never",
+    "dist": "pnpm run build:web && electron-builder --publish never",
+    "dist:mac": "pnpm run build:web && electron-builder --mac dmg zip --arm64 --x64 --publish never",
+    "test": "vitest run test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "electron": "43.4.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.trueedge.trainer",
+    "productName": "TrueEdge",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "npmRebuild": false,
+    "directories": {
+      "buildResources": "build",
+      "output": "../../release"
+    },
+    "files": [
+      "src/**/*.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "staged-web",
+        "to": "web",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "build/icon.png",
+      "sign": null,
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    },
+    "linux": {
+      "category": "Education",
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}

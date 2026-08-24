@@ -1,0 +1,117 @@
+.pageHeader {
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+}
+
+.pageHeader p,
+.sectionEyebrow {
+  color: var(--signal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.pageHeader h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin: 0;
+  max-width: 760px;
+}
+
+.pageHeader > div > span {
+  color: var(--muted);
+  display: block;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 12px;
+  max-width: 680px;
+}
+
+.headerActions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.skillRow {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(150px, 1fr) minmax(120px, 1.4fr) 44px;
+  min-height: 58px;
+  padding: 10px 0;
+}
+
+.skillRow:first-child {
+  border-top: 0;
+}
+
+.skillRow > div {
+  display: grid;
+  gap: 3px;
+}
+
+.skillRow strong {
+  font-size: 13px;
+}
+
+.skillRow span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.skillRow progress {
+  appearance: none;
+  background: var(--surface-inset);
+  border: 0;
+  height: 5px;
+  width: 100%;
+}
+
+.skillRow progress::-webkit-progress-bar {
+  background: var(--surface-inset);
+}
+
+.skillRow progress::-webkit-progress-value {
+  background: var(--signal);
+}
+
+.skillRow progress::-moz-progress-bar {
+  background: var(--signal);
+}
+
+.skillRow b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .pageHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .pageHeader h1 {
+    font-size: 30px;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .skillRow {
+    gap: 10px;
+    grid-template-columns: minmax(130px, 1fr) 1fr 40px;
+  }
+}

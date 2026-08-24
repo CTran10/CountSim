@@ -1,0 +1,93 @@
+.layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.65fr);
+}
+
+.recommendation {
+  align-content: start;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.recommendation > span {
+  color: var(--signal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.recommendation strong {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.recommendation p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0 0 4px;
+}
+
+.recent {
+  grid-column: 1 / -1;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.recent > p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.recent ol {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent li {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 0.6fr 0.6fr auto;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.recent li > span,
+.recent li > small {
+  color: var(--muted);
+}
+
+.recent li > b {
+  color: var(--positive);
+}
+
+.recent .valueLabel {
+  color: var(--muted);
+  display: block;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 560px) {
+  .recent li {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

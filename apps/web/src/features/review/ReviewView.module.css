@@ -1,0 +1,372 @@
+.review {
+  display: grid;
+  gap: 16px;
+}
+
+.scorecard {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.scorecard > div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  min-height: 100px;
+  padding: 17px;
+}
+
+.scorecard span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.scorecard strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 25px;
+}
+
+.scorecard .secondaryMetric strong {
+  color: var(--ink-soft);
+  font-size: 18px;
+}
+
+.timeline {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 20px;
+}
+
+.timeline ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline li {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 16px;
+  grid-template-columns:
+    70px minmax(160px, 1fr) minmax(240px, 0.8fr)
+    auto;
+  padding: 14px 0;
+}
+
+.timeline li > span {
+  color: var(--signal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.timeline li > div {
+  display: grid;
+  gap: 4px;
+}
+
+.timeline li strong {
+  font-size: 13px;
+}
+
+.timeline li small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.timeline dl {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+}
+
+.timeline dl > div {
+  display: grid;
+  gap: 3px;
+}
+
+.timeline dt {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.timeline dd {
+  font-size: 12px;
+  margin: 0;
+}
+
+.timeline li > button {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.timeline li > button:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.cleanRun {
+  border-top: 1px solid var(--line);
+  color: var(--positive);
+  font-size: 13px;
+  margin: 0;
+  padding-top: 16px;
+}
+
+.breakdown {
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.breakdown dl {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 14px 0 0;
+  background: var(--line);
+}
+
+.breakdown dl > div {
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+  background: var(--surface-inset);
+}
+
+.breakdown dt {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.breakdown dd {
+  margin: 0;
+  font:
+    700 11px/1.3 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+
+.replay {
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.replayNavigation {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  margin-top: 16px;
+}
+
+.replayNavigation label {
+  color: var(--muted);
+  display: grid;
+  font-size: 10px;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.replayNavigation button,
+.replayNavigation select {
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  min-height: 38px;
+  padding: 0 11px;
+}
+
+.replayNavigation button {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.replayNavigation button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.tableContext {
+  background: #101712;
+  border: 1px solid #344237;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 14px;
+}
+
+.tableContext section {
+  background: #121a14;
+  display: grid;
+  gap: 11px;
+  min-height: 108px;
+  padding: 15px;
+}
+
+.tableContext section > span,
+.scoredDecision > span {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.cards b {
+  align-items: center;
+  background: #eee9dd;
+  border: 1px solid #fff9eb;
+  border-radius: 2px;
+  color: #181a17;
+  display: inline-flex;
+  font:
+    800 13px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  justify-content: center;
+  min-height: 42px;
+  min-width: 34px;
+  padding: 5px;
+}
+
+.decisionContext {
+  background: var(--line);
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 1px 0 0;
+}
+
+.decisionContext > div {
+  background: var(--surface-inset);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.decisionContext dt,
+.scoredDecision dt {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.decisionContext dd,
+.scoredDecision dd {
+  font-size: 11px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.scoredDecision {
+  border: 1px solid var(--signal);
+  margin-top: 14px;
+  padding: 13px;
+}
+
+.scoredDecision dl {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  margin: 10px 0 0;
+}
+
+.scoredDecision dl > div {
+  display: grid;
+  gap: 4px;
+}
+
+.replayMetrics {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  margin-top: 14px;
+  background: var(--line);
+}
+
+.replayMetrics > div {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  background: var(--surface-inset);
+}
+
+.replayMetrics span {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.replayMetrics strong {
+  font:
+    700 12px/1.2 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  text-transform: capitalize;
+}
+
+@media (max-width: 760px) {
+  .scorecard {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .timeline li {
+    align-items: start;
+    grid-template-columns: 60px 1fr;
+  }
+
+  .timeline dl {
+    grid-column: 2;
+  }
+
+  .timeline li > button {
+    grid-column: 2;
+  }
+
+  .breakdown dl {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .replayMetrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .replayNavigation {
+    align-items: stretch;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .replayNavigation label {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .tableContext,
+  .decisionContext {
+    grid-template-columns: 1fr;
+  }
+}

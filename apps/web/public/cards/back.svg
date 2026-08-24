@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 243" role="img" aria-labelledby="title">
+  <title id="title">Face-down playing card</title>
+  <rect x="1" y="1" width="166" height="241" rx="10" fill="#f4f0e8" stroke="#101512" stroke-width="2"/>
+  <rect x="8" y="8" width="152" height="227" rx="6" fill="#172c25" stroke="#b9904c" stroke-width="2"/>
+  <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <path d="M0 8h16M8 0v16" stroke="#b9904c" stroke-width="1" opacity=".55"/>
+  </pattern>
+  <rect x="14" y="14" width="140" height="215" rx="3" fill="url(#grid)" stroke="#e4c98c"/>
+  <circle cx="84" cy="121.5" r="30" fill="#172c25" stroke="#e4c98c" stroke-width="2"/>
+  <path d="M84 94l7 20 21 1-17 13 6 20-17-12-17 12 6-20-17-13 21-1z" fill="#b9904c"/>
+</svg>

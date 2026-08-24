@@ -1,0 +1,383 @@
+.catalog {
+  display: grid;
+  gap: 22px;
+}
+
+.notice {
+  background: #181810;
+  border: 1px solid #504427;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 190px 1fr;
+  padding: 14px 16px;
+}
+
+.notice strong {
+  color: var(--signal);
+  font-size: 12px;
+}
+
+.notice p {
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.toolbar > div {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbar button {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  font-size: 11px;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.toolbar button[aria-pressed="true"] {
+  background: var(--surface-raised);
+  border-color: var(--signal);
+}
+
+.toolbar > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.presetList {
+  border-bottom: 1px solid var(--line);
+}
+
+.preset {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 64px minmax(180px, 0.7fr) minmax(420px, 1.6fr) 126px;
+  min-height: 132px;
+  padding: 15px 0;
+}
+
+.compareChoice {
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  display: grid;
+  font-size: 9px;
+  gap: 6px;
+  justify-items: start;
+  text-transform: uppercase;
+}
+
+.compareChoice input {
+  accent-color: var(--signal);
+  height: 16px;
+  width: 16px;
+}
+
+.gameIdentity > span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.gameIdentity h2 {
+  font-size: 17px;
+  margin: 5px 0 7px;
+}
+
+.ruleLine {
+  color: var(--ink-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.ruleLine span {
+  color: var(--line-strong);
+}
+
+.gameMetrics {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+}
+
+.gameMetrics > div {
+  background: var(--surface);
+  min-height: 76px;
+  padding: 10px;
+}
+
+.gameMetrics dt {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.gameMetrics dd {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 6px 0 3px;
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+}
+
+.gameMetrics small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.confidence {
+  color: var(--signal);
+}
+
+.rowActions {
+  align-items: stretch;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rowActions > a,
+.rowActions summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-size: 10px;
+  font-weight: 750;
+  justify-content: center;
+  min-height: 34px;
+  text-decoration: none;
+}
+
+.rowActions > a {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+.rowActions details {
+  min-width: 0;
+  position: relative;
+}
+
+.rowActions details[open] {
+  justify-self: stretch;
+  width: 100%;
+}
+
+.preset:has(.rowActions details[open]) .rowActions {
+  grid-column: 2 / -1;
+  grid-template-columns: 126px minmax(0, 1fr);
+}
+
+.rowActions summary {
+  border: 1px solid var(--line-strong);
+  list-style: none;
+}
+
+.rowActions summary::-webkit-details-marker {
+  display: none;
+}
+
+.evidence {
+  background: #0b0e0c;
+  border: 1px solid var(--line-strong);
+  margin-top: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 14px;
+  width: 100%;
+}
+
+.evidence p {
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.evidence ul {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.evidence li {
+  display: grid;
+  gap: 3px;
+}
+
+.evidence a {
+  color: var(--signal);
+  font-size: 11px;
+}
+
+.evidence span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.comparison {
+  border: 1px solid var(--line);
+  padding: 20px;
+}
+
+.localCompare {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+}
+
+.localCompare > strong {
+  margin-right: 8px;
+  font-size: 11px;
+}
+
+.localCompare label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--line-strong);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.localCompare small {
+  color: var(--muted);
+}
+
+.sectionHeading {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sectionHeading span {
+  color: var(--signal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.sectionHeading h2 {
+  font-size: 16px;
+  margin: 5px 0 0;
+}
+
+.sectionHeading p,
+.compareEmpty {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.comparison table {
+  border-collapse: collapse;
+  font-size: 11px;
+  width: 100%;
+}
+
+.comparison th,
+.comparison td {
+  border-top: 1px solid var(--line);
+  padding: 10px;
+  text-align: left;
+}
+
+.comparison thead th {
+  border-top: 0;
+  color: var(--ink);
+}
+
+.comparison tbody th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.comparison .differs td {
+  color: var(--signal);
+}
+
+@media (max-width: 1120px) {
+  .preset {
+    grid-template-columns: 54px minmax(150px, 0.6fr) 1.4fr;
+  }
+
+  .rowActions {
+    grid-column: 2 / -1;
+    grid-template-columns: 126px 126px;
+  }
+}
+
+@media (max-width: 760px) {
+  .notice {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .preset {
+    align-items: start;
+    grid-template-columns: 46px 1fr;
+  }
+
+  .gameMetrics,
+  .rowActions {
+    grid-column: 2;
+  }
+
+  .preset:has(.rowActions details[open]) .rowActions {
+    grid-column: 2;
+    grid-template-columns: minmax(96px, 126px) minmax(0, 1fr);
+  }
+
+  .gameMetrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .gameMetrics,
+  .rowActions {
+    grid-template-columns: 1fr;
+  }
+
+  .rowActions details[open] {
+    width: 100%;
+  }
+
+  .preset:has(.rowActions details[open]) .rowActions {
+    grid-template-columns: 1fr;
+  }
+}

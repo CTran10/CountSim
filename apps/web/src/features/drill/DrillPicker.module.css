@@ -1,0 +1,73 @@
+.grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.drill {
+  align-items: start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 38px 1fr auto;
+  min-height: 126px;
+  padding: 18px;
+}
+
+.drill > span {
+  align-items: center;
+  border: 1px solid var(--line-strong);
+  color: var(--signal);
+  display: flex;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 750;
+  height: 34px;
+  justify-content: center;
+}
+
+.drill h2,
+.drill p {
+  margin: 0;
+}
+
+.drill h2 {
+  font-size: 15px;
+}
+
+.drill p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 7px;
+}
+
+.drill a {
+  color: var(--signal);
+  font-size: 11px;
+  font-weight: 750;
+  padding: 4px 0;
+  text-decoration: none;
+}
+
+.drill a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .drill {
+    grid-template-columns: 34px 1fr;
+  }
+
+  .drill a {
+    grid-column: 2;
+  }
+}

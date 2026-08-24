@@ -1,0 +1,185 @@
+.shell {
+  min-height: 100vh;
+  padding-left: var(--sidebar);
+}
+
+.skipLink {
+  background: var(--signal);
+  color: var(--signal-ink);
+  left: 12px;
+  padding: 10px 14px;
+  position: fixed;
+  top: -80px;
+  z-index: 100;
+}
+
+.skipLink:focus {
+  top: 12px;
+}
+
+.sidebar {
+  background: #0a0d0b;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  left: 0;
+  padding: 22px 14px 18px;
+  position: fixed;
+  top: 0;
+  width: var(--sidebar);
+  z-index: 20;
+}
+
+.brand,
+.mobileBrand {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand {
+  margin: 0 8px 38px;
+}
+
+.brand > span,
+.mobileBrand > span {
+  align-items: center;
+  background: var(--signal);
+  color: var(--signal-ink);
+  display: inline-flex;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  letter-spacing: -0.04em;
+  width: 28px;
+}
+
+.brand strong,
+.mobileBrand strong {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 3px;
+}
+
+.navLink,
+.activeNav {
+  align-items: center;
+  border-left: 2px solid transparent;
+  color: var(--muted);
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.activeNav {
+  background: var(--surface-raised);
+  border-color: var(--signal);
+  color: var(--ink);
+}
+
+.sidebarFoot {
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+  padding: 16px 8px 0;
+}
+
+.sidebarFoot span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.sidebarFoot p {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin: 5px 0 0;
+}
+
+.main {
+  margin: 0 auto;
+  max-width: calc(var(--content-max) + 64px);
+  min-height: 100vh;
+  padding: 34px 32px 56px;
+  width: 100%;
+}
+
+.mobileHeader {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding-left: 0;
+    padding-top: 104px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobileHeader {
+    background: #0a0d0b;
+    border-bottom: 1px solid var(--line);
+    display: block;
+    left: 0;
+    overflow: hidden;
+    padding: 12px 16px 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 30;
+  }
+
+  .mobileBrand > span {
+    height: 24px;
+    width: 24px;
+  }
+
+  .mobileHeader nav {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .mobileHeader nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileHeader nav a {
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 650;
+    padding: 8px 9px 10px;
+    text-decoration: none;
+  }
+
+  .mobileHeader nav a[aria-current="page"] {
+    border-color: var(--signal);
+    color: var(--ink);
+  }
+
+  .main {
+    padding: 22px 16px 40px;
+  }
+}

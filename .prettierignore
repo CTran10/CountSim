@@ -1,0 +1,10 @@
+node_modules/
+.pnpm-store/
+.next/
+coverage/
+playwright-report/
+test-results/
+release/
+apps/desktop/staged-web/
+pnpm-lock.yaml
+apps/web/public/cards/*.svg

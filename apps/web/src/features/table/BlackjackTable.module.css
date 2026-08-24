@@ -1,0 +1,874 @@
+.tableApp {
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.sessionBar {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 1.1fr 1.6fr 1.4fr 1fr auto;
+  border-bottom: 1px solid var(--line);
+}
+
+.sessionBar > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 13px 18px;
+  border-right: 1px solid var(--line);
+}
+
+.sessionBar > div:last-child {
+  border-right: 0;
+}
+
+.sessionBar span,
+.handHeading h2,
+.wagerMarker span,
+.notice > span,
+.railHeading span,
+.countPair span,
+.analysisNote span,
+.shoeMeter span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sessionBar strong,
+.sessionBar code {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionBar .primaryMetric strong {
+  color: var(--signal);
+  font-size: 19px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+}
+
+.tableColumn {
+  min-width: 0;
+}
+
+.felt {
+  position: relative;
+  min-height: 540px;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 54px 38px 34px;
+  overflow: hidden;
+  background: #123d30;
+  border-bottom: 1px solid #285849;
+}
+
+.tableRules {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  right: 22px;
+  display: flex;
+  justify-content: space-between;
+  color: #b8c9c0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hand {
+  width: min(410px, 100%);
+  margin: 0 auto;
+  padding: 10px 12px 12px;
+  border: 1px solid transparent;
+}
+
+.activeHand {
+  border-color: color-mix(in srgb, var(--signal) 65%, transparent);
+}
+
+.handHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgb(234 241 232 / 20%);
+}
+
+.handHeading h2 {
+  margin: 0;
+  color: #d0ddd5;
+}
+
+.handHeading > div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.handHeading small {
+  color: #d7dfd8;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.handHeading strong {
+  color: #fffef8;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+}
+
+.cards,
+.emptyHand {
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cards {
+  padding-left: 16px;
+}
+
+.card {
+  --deal-x: 142px;
+  --deal-y: -90px;
+  --deal-rotate: 4deg;
+
+  width: 102px;
+  height: 144px;
+  flex: 0 0 auto;
+  margin-left: -16px;
+  overflow: hidden;
+  border: 1px solid #d4cec1;
+  border-radius: 5px;
+  background: #f8f4ea;
+  box-shadow: 0 7px 14px rgb(2 14 10 / 30%);
+}
+
+.dealerCard {
+  --deal-y: -56px;
+  --deal-rotate: 3deg;
+}
+
+.playerCard {
+  --deal-y: -188px;
+  --deal-rotate: -4deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    animation: dealCard 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--deal-delay, 0ms);
+    will-change: transform, opacity;
+  }
+}
+
+@keyframes dealCard {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--deal-x), var(--deal-y), 0)
+      rotate(var(--deal-rotate)) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0) scale(1);
+  }
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.emptyHand {
+  gap: 10px;
+}
+
+.emptyHand span {
+  width: 88px;
+  height: 126px;
+  border: 1px dashed rgb(230 239 229 / 24%);
+  border-radius: 5px;
+}
+
+.wagerMarker {
+  width: 118px;
+  margin: -8px auto;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgb(227 161 58 / 58%);
+  text-align: center;
+}
+
+.wagerMarker span {
+  color: #adb7ac;
+}
+
+.wagerMarker strong {
+  color: #f2d193;
+  font-size: 14px;
+}
+
+.playerHands {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.playerHands:has(> section:nth-child(2)) .hand {
+  width: min(310px, 50%);
+}
+
+.playerHands:has(> section:nth-child(3)) .card {
+  width: 74px;
+  height: 104px;
+  margin-left: -26px;
+}
+
+.playerHands:has(> section:nth-child(3)) .cards {
+  min-height: 106px;
+}
+
+.controls {
+  min-height: 150px;
+  display: grid;
+  grid-template-columns: minmax(230px, 0.8fr) minmax(460px, 1.4fr);
+  align-items: center;
+  gap: 24px;
+  padding: 22px;
+  background: var(--surface-raised);
+}
+
+.notice {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.notice strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.notice b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 17px;
+}
+
+.positive {
+  color: var(--positive);
+}
+
+.negative {
+  color: var(--negative);
+}
+
+.actionStack {
+  display: grid;
+  gap: 8px;
+}
+
+.strategyNotice {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(130px, 0.25fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 11px 13px;
+  border: 1px solid rgb(209 99 75 / 55%);
+  border-left: 3px solid var(--negative);
+  background: #1a1311;
+}
+
+.strategyNotice strong {
+  color: #f0a38f;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.strategyNotice p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.betActions,
+.playActions,
+.insurancePrompt {
+  display: flex;
+  gap: 6px;
+}
+
+.betActions button,
+.playActions button,
+.insurancePrompt button,
+.practicePanel button,
+.sessionTools button,
+.sessionTools summary {
+  min-height: 39px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  background: #1a201b;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.betActions button:hover:not(:disabled),
+.playActions button:hover:not(:disabled),
+.insurancePrompt button:hover:not(:disabled),
+.practicePanel button:hover:not(:disabled),
+.sessionTools button:hover:not(:disabled),
+.sessionTools summary:hover {
+  border-color: #5c685a;
+  color: var(--ink);
+}
+
+.betActions button:disabled,
+.playActions button:disabled,
+.insurancePrompt button:disabled,
+.sessionTools button:disabled {
+  color: #646b63;
+  cursor: not-allowed;
+}
+
+.betActions button[aria-pressed="true"] {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.playActions {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.playActions .dealButton {
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  background: var(--signal);
+}
+
+.playActions kbd {
+  margin-left: 5px;
+  font: inherit;
+  opacity: 0.55;
+}
+
+.insurancePrompt {
+  grid-column: 1 / -1;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.insurancePrompt span {
+  margin-right: auto;
+  color: var(--signal);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trainingRail {
+  min-width: 0;
+  border-left: 1px solid var(--line);
+  background: #0f130f;
+}
+
+.trainingRail > summary {
+  display: none;
+}
+
+.railBody {
+  position: sticky;
+  top: 24px;
+  padding: 25px 21px;
+}
+
+.railHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.railHeading h2 {
+  margin: 5px 0 0;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.railHeading b {
+  align-self: start;
+  color: var(--signal);
+  font:
+    700 9px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.1em;
+}
+
+.countPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.countPair > div {
+  display: grid;
+  gap: 8px;
+}
+
+.countPair > div + div {
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+
+.countPair strong {
+  color: var(--signal);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+}
+
+.metrics {
+  margin: 0;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.metrics div {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metrics dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.metrics dd {
+  margin: 0;
+  color: var(--ink-soft);
+  font:
+    700 11px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+
+.analysisNote {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.decisionLog {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+
+.decisionLog > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.decisionLog ol {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.decisionLog li {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.analysisNote p,
+.shoeMeter p {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.shoeMeter {
+  padding-top: 19px;
+}
+
+.shoeMeter > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.shoeMeter strong {
+  font-size: 11px;
+}
+
+.shoeMeter progress {
+  width: 100%;
+  height: 4px;
+  margin: 12px 0 0;
+  display: block;
+  border: 0;
+  appearance: none;
+}
+
+.shoeMeter progress::-webkit-progress-bar {
+  background: var(--line);
+}
+
+.shoeMeter progress::-webkit-progress-value,
+.shoeMeter progress::-moz-progress-bar {
+  background: var(--signal);
+}
+
+.practicePanel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  border-top: 1px solid var(--line);
+  background: var(--line);
+}
+
+.practicePanel form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--surface);
+}
+
+.practicePanel label {
+  display: grid;
+  gap: 5px;
+}
+
+.practicePanel label span,
+.sessionTools label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.practicePanel input,
+.sessionTools input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-inset);
+  padding: 0 9px;
+}
+
+.sessionTools {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.sessionTools details {
+  margin-right: auto;
+}
+
+.sessionTools summary {
+  display: flex;
+  align-items: center;
+  list-style: none;
+}
+
+.sessionTools summary::-webkit-details-marker {
+  display: none;
+}
+
+.sessionTools form {
+  position: absolute;
+  z-index: 10;
+  width: min(480px, calc(100vw - 48px));
+  margin-top: 7px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid var(--line-strong);
+  background: #0e120f;
+}
+
+.sessionTools label {
+  display: grid;
+  gap: 6px;
+}
+
+.sessionTools form button {
+  grid-column: 1 / -1;
+}
+
+.sessionTools textarea {
+  width: 100%;
+  max-height: 280px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #090c0a;
+  font:
+    10px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  resize: vertical;
+}
+
+.sessionTools textarea[hidden] {
+  display: none;
+}
+
+.replayScrubber {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.replayScrubber label {
+  display: grid;
+  gap: 8px;
+}
+
+.replayScrubber input {
+  min-height: 20px;
+  padding: 0;
+}
+
+.replayScrubber p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.disclaimer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  .sessionBar {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sessionBar > div:nth-child(2) {
+    grid-column: span 2;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .sessionBar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sessionBar > div:nth-child(2) {
+    grid-column: auto;
+  }
+
+  .sessionBar > div:nth-child(3),
+  .sessionBar > div:nth-child(4),
+  .sessionBar > div:nth-child(5) {
+    display: none;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .felt {
+    min-height: 500px;
+    padding: 48px 14px 22px;
+  }
+
+  .trainingRail {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .trainingRail > summary {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .trainingRail > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .trainingRail > summary span {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .trainingRail > summary strong {
+    color: var(--signal);
+    font-size: 12px;
+  }
+
+  .railBody {
+    position: static;
+    padding: 4px 16px 22px;
+  }
+
+  .trainingRail:not([open]) .railBody {
+    display: none;
+  }
+
+  .railHeading {
+    display: none;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+  }
+
+  .practicePanel {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionTools {
+    flex-wrap: wrap;
+  }
+
+  .sessionTools details {
+    width: 100%;
+  }
+
+  .sessionTools summary,
+  .sessionTools > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sessionTools form {
+    position: static;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .felt {
+    min-height: 470px;
+  }
+
+  .card {
+    width: 82px;
+    height: 116px;
+    margin-left: -12px;
+  }
+
+  .cards,
+  .emptyHand {
+    min-height: 118px;
+  }
+
+  .playerHands:has(> section:nth-child(2)) .card {
+    width: 66px;
+    height: 93px;
+    margin-left: -24px;
+  }
+
+  .controls {
+    padding: 16px 13px;
+  }
+
+  .betActions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .playActions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .playActions kbd {
+    display: none;
+  }
+
+  .insurancePrompt {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .strategyNotice {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .insurancePrompt span {
+    grid-column: 1 / -1;
+  }
+
+  .sessionTools form {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionTools form button {
+    grid-column: auto;
+  }
+
+  .disclaimer {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

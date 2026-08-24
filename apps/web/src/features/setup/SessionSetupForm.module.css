@@ -1,0 +1,239 @@
+.form {
+  display: grid;
+  gap: 14px;
+  max-width: 1040px;
+}
+
+.customNotice {
+  display: grid;
+  gap: 5px;
+  padding: 15px 18px;
+  border: 1px solid var(--signal);
+  background: #18170f;
+}
+
+.customNotice span {
+  color: var(--signal);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.customNotice strong {
+  font-size: 14px;
+}
+
+.customNotice p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  margin: 0;
+  padding: 20px;
+}
+
+.section legend {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  padding: 0 8px 0 0;
+}
+
+.section > p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.modeGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.choice,
+.compactChoice {
+  cursor: pointer;
+  position: relative;
+}
+
+.choice input,
+.compactChoice input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.choice > span {
+  border: 1px solid var(--line-strong);
+  display: grid;
+  gap: 7px;
+  min-height: 104px;
+  padding: 14px;
+}
+
+.choice strong {
+  font-size: 13px;
+}
+
+.choice small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.choice input:checked + span,
+.compactChoice input:checked + span {
+  background: #1b1a12;
+  border-color: var(--signal);
+}
+
+.choice input:focus-visible + span,
+.compactChoice input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.intentGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.compactChoice > span {
+  border: 1px solid var(--line-strong);
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 9px 12px;
+}
+
+.fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fields label {
+  display: grid;
+  gap: 7px;
+}
+
+.fields label > span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.fields input,
+.fields select {
+  background: var(--surface-inset);
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  min-height: 42px;
+  padding: 0 11px;
+  width: 100%;
+}
+
+.moneyInput {
+  align-items: center;
+  background: var(--surface-inset);
+  border: 1px solid var(--line-strong);
+  display: flex;
+}
+
+.moneyInput:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.moneyInput b {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  padding-left: 11px;
+}
+
+.moneyInput input {
+  border: 0;
+  outline: 0;
+}
+
+.error {
+  color: var(--negative) !important;
+  margin: 14px 0 0 !important;
+}
+
+.submitRow {
+  align-items: center;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.submitRow > div {
+  display: grid;
+  gap: 4px;
+}
+
+.submitRow strong {
+  font-size: 12px;
+}
+
+.submitRow span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.submitRow button {
+  background: var(--signal);
+  border: 1px solid var(--signal);
+  color: var(--signal-ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 0 18px;
+}
+
+.submitRow button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (max-width: 900px) {
+  .modeGrid,
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .section {
+    padding: 16px;
+  }
+
+  .modeGrid,
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .choice > span {
+    min-height: 0;
+  }
+
+  .submitRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

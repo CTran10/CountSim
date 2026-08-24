@@ -1,0 +1,19 @@
+{
+  "name": "@trueedge/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "simulate": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run test"
+  },
+  "dependencies": {
+    "@trueedge/casino-catalog": "workspace:*",
+    "@trueedge/game-core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.23.12"
+  }
+}

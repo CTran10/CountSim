@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#0c0f0d" />
+  <rect x="168" y="168" width="688" height="688" fill="#e3a13a" />
+  <text
+    x="512"
+    y="622"
+    fill="#181006"
+    font-family="Menlo, Monaco, monospace"
+    font-size="294"
+    font-weight="800"
+    letter-spacing="-38"
+    text-anchor="middle"
+  >TE</text>
+</svg>
