@@ -17,9 +17,12 @@ import {
   type SessionState,
   type TerminalReason
 } from "@trueedge/game-core";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { wagerChoices } from "../../lib/betRamp";
 import { formatCents } from "../../lib/format";
+import { updateSelectedGameId } from "../../lib/gamePreference";
 import {
   readBrowserAppData,
   recordSession,
@@ -191,6 +194,7 @@ export function BlackjackTable({
   presetLabel = "Custom rules",
   tableMinimumCents = 500
 }: BlackjackTableProps) {
+  const router = useRouter();
   const [session, setSession] = useState<TableSession>(() => ({
     state: createSeededSession(seed, config),
     notice: "Choose a virtual wager to begin.",
@@ -198,6 +202,7 @@ export function BlackjackTable({
     startedAtEpochMs: Date.now()
   }));
   const [replayVisible, setReplayVisible] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
   const [persistenceError, setPersistenceError] = useState("");
   const [replayStep, setReplayStep] = useState<number | null>(null);
   const [lastFeedback, setLastFeedback] = useState<string | null>(null);
@@ -224,6 +229,7 @@ export function BlackjackTable({
   const sessionStartedAtMs = useRef<number | null>(null);
   const tableAppRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLElement>(null);
+  const insurancePromptRef = useRef<HTMLDivElement>(null);
   const { state, notice, commandElapsedMs } = session;
   const modePolicy = MODE_POLICIES[mode];
   const view = useMemo(() => selectTableView(state), [state]);
@@ -250,12 +256,22 @@ export function BlackjackTable({
   );
   const replayPreview = replayTimeline?.[visibleReplayStep]?.view ?? view;
   const betChoices = useMemo(
-    () =>
-      [...new Set([tableMinimumCents, 2500, 5000, 10_000])].filter(
-        (amount) => amount <= view.limits.maxBetCents
-      ),
+    () => wagerChoices(tableMinimumCents, view.limits.maxBetCents),
     [tableMinimumCents, view.limits.maxBetCents]
   );
+  const repeatWagerCents = state.round?.wagerCents ?? null;
+  const canRepeatWager =
+    view.phase === "settled" &&
+    repeatWagerCents !== null &&
+    repeatWagerCents <= view.bankrollCents &&
+    repeatWagerCents <= view.limits.maxBetCents;
+  const selectedWagerCents =
+    view.pendingBetCents > 0
+      ? view.pendingBetCents
+      : canRepeatWager
+        ? repeatWagerCents
+        : null;
+  const canDealSelectedWager = view.canDeal || canRepeatWager;
 
   const dispatch = useCallback((command: SessionCommand) => {
     const recordedAtEpochMs = Date.now();
@@ -290,9 +306,34 @@ export function BlackjackTable({
     dispatch({ type: "deal" });
   }, [dispatch]);
 
+  const dealSelectedWager = useCallback(() => {
+    if (!view.canDeal) {
+      if (!canRepeatWager || repeatWagerCents === null) return;
+      dispatch({ type: "place_bet", amountCents: repeatWagerCents });
+    }
+    startRound();
+  }, [canRepeatWager, dispatch, repeatWagerCents, startRound, view.canDeal]);
+
   useEffect(() => {
     tableAppRef.current?.setAttribute("data-hydrated", "true");
   }, []);
+
+  useEffect(() => {
+    if (state.config.presetId !== undefined) {
+      updateSelectedGameId(state.config.presetId);
+    }
+  }, [state.config.presetId]);
+
+  useEffect(() => {
+    if (view.phase === "settled") controlsRef.current?.focus();
+  }, [view.phase]);
+
+  useEffect(() => {
+    if (view.phase !== "insurance") return;
+    const prompt = insurancePromptRef.current;
+    prompt?.scrollIntoView?.({ block: "center" });
+    prompt?.focus({ preventScroll: true });
+  }, [view.phase]);
 
   const performAction = useCallback(
     (action: PlayAction) => {
@@ -437,7 +478,7 @@ export function BlackjackTable({
       }
       const key = event.key.toLowerCase();
       let handled = true;
-      if (key === "d" && view.canDeal) startRound();
+      if (key === "d" && canDealSelectedWager) dealSelectedWager();
       else if (key === "h" && view.canHit) performAction("hit");
       else if (key === "s" && view.canStand) performAction("stand");
       else if (key === "x" && view.canDouble) performAction("double");
@@ -451,7 +492,7 @@ export function BlackjackTable({
     }
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [performAction, startRound, view]);
+  }, [canDealSelectedWager, dealSelectedWager, performAction, view]);
 
   useEffect(() => {
     const duration = state.config.limits.maxDurationSeconds;
@@ -479,116 +520,155 @@ export function BlackjackTable({
     view.phase
   ]);
 
-  useEffect(() => {
-    if (view.terminalReason === null || typeof window === "undefined") return;
-    if (commandElapsedMs.length !== state.successfulCommands.length) return;
-    const key = `${seed}:${view.analytics.handsPlayed}:${view.terminalReason}`;
-    if (persistedKey.current === key) return;
-    const decisionQuality =
-      decisionAttempts === 0
-        ? 0
-        : Math.round((decisionCorrect / decisionAttempts) * 100);
-    const discipline = Math.max(
-      0,
-      100 - view.analytics.disciplineViolations * 20
-    );
-    const sessionIntent = effectiveSessionIntent(
-      mode,
-      state.config.practiceIntent,
-      deriveDeviationProfileId(view)
-    );
-    const scoreTechnicalSkills = modePolicy.scoreDecisions;
-    const skillResults: readonly StoredSkillProgress[] = [
-      {
-        id: "basic_strategy",
-        attempts: scoreTechnicalSkills ? basicAttempts : 0,
-        correct: scoreTechnicalSkills ? basicCorrect : 0
-      },
-      {
-        id: "deviations",
-        attempts: scoreTechnicalSkills ? deviationAttempts : 0,
-        correct: scoreTechnicalSkills ? deviationCorrect : 0
-      },
-      {
-        id: "insurance",
-        attempts: scoreTechnicalSkills ? insuranceAttempts : 0,
-        correct: scoreTechnicalSkills ? insuranceCorrect : 0
-      },
-      {
-        id: "running_count",
-        attempts: scoreTechnicalSkills ? view.analytics.countAttempts : 0,
-        correct: scoreTechnicalSkills ? view.analytics.countCorrect : 0
-      },
-      {
-        id: "deck_estimation",
-        attempts: scoreTechnicalSkills ? view.analytics.deckAttempts : 0,
-        correct: scoreTechnicalSkills ? view.analytics.deckCorrect : 0
-      },
-      {
-        id: "true_count",
-        attempts: scoreTechnicalSkills ? view.analytics.trueCountAttempts : 0,
-        correct: scoreTechnicalSkills ? view.analytics.trueCountCorrect : 0
+  const persistSession = useCallback(
+    (completionReason: string, key: string): boolean => {
+      if (typeof window === "undefined") return false;
+      if (persistedKey.current === key) return true;
+      if (commandElapsedMs.length !== state.successfulCommands.length) {
+        queueMicrotask(() => {
+          setPersistenceError(
+            "Finish the current action before ending the session."
+          );
+        });
+        return false;
       }
-    ];
-    const current = readBrowserAppData();
-    const completedAt = new Date().toISOString();
-    const sessionId = `session-${seed}-${completedAt}-${window.crypto.randomUUID()}`;
-    const exportedReplay = exportReplay(state);
-    const replayCandidate =
-      exportedReplay.successfulCommands.length <= MAX_REPLAY_COMMANDS &&
-      exportedReplay.resolvedShoes.length <= MAX_REPLAY_SHOES
-        ? { ...exportedReplay, commandElapsedMs }
-        : null;
-    const persistedReplay =
-      replayCandidate !== null &&
-      JSON.stringify(replayCandidate).length <= MAX_PERSISTED_REPLAY_BYTES
-        ? replayCandidate
-        : null;
-    const next = recordSession(
-      current,
-      {
-        id: sessionId,
-        completedAt,
-        presetId: state.config.presetId ?? "custom",
-        hands: view.analytics.handsPlayed,
-        startingBankrollCents: state.config.limits.startingBankrollCents,
-        endingBankrollCents: view.bankrollCents,
-        decisionQuality,
-        discipline,
-        intent: sessionIntent,
-        intentScore: scoreIntent(sessionIntent, skillResults, discipline),
-        skillResults,
-        completionReason: TERMINAL_LABELS[view.terminalReason],
-        mistakes,
-        replay: persistedReplay
-      },
-      skillResults
-    );
-    if (writeBrowserAppData(next)) {
-      persistedKey.current = key;
+      const decisionQuality =
+        decisionAttempts === 0
+          ? 0
+          : Math.round((decisionCorrect / decisionAttempts) * 100);
+      const discipline = Math.max(
+        0,
+        100 - view.analytics.disciplineViolations * 20
+      );
+      const sessionIntent = effectiveSessionIntent(
+        mode,
+        state.config.practiceIntent,
+        deriveDeviationProfileId(view)
+      );
+      const scoreTechnicalSkills = modePolicy.scoreDecisions;
+      const skillResults: readonly StoredSkillProgress[] = [
+        {
+          id: "basic_strategy",
+          attempts: scoreTechnicalSkills ? basicAttempts : 0,
+          correct: scoreTechnicalSkills ? basicCorrect : 0
+        },
+        {
+          id: "deviations",
+          attempts: scoreTechnicalSkills ? deviationAttempts : 0,
+          correct: scoreTechnicalSkills ? deviationCorrect : 0
+        },
+        {
+          id: "insurance",
+          attempts: scoreTechnicalSkills ? insuranceAttempts : 0,
+          correct: scoreTechnicalSkills ? insuranceCorrect : 0
+        },
+        {
+          id: "running_count",
+          attempts: scoreTechnicalSkills ? view.analytics.countAttempts : 0,
+          correct: scoreTechnicalSkills ? view.analytics.countCorrect : 0
+        },
+        {
+          id: "deck_estimation",
+          attempts: scoreTechnicalSkills ? view.analytics.deckAttempts : 0,
+          correct: scoreTechnicalSkills ? view.analytics.deckCorrect : 0
+        },
+        {
+          id: "true_count",
+          attempts: scoreTechnicalSkills ? view.analytics.trueCountAttempts : 0,
+          correct: scoreTechnicalSkills ? view.analytics.trueCountCorrect : 0
+        }
+      ];
+      const current = readBrowserAppData();
+      const completedAt = new Date().toISOString();
+      const sessionId = `session-${seed}-${completedAt}-${window.crypto.randomUUID()}`;
+      const exportedReplay = exportReplay(state);
+      const replayCandidate =
+        exportedReplay.successfulCommands.length <= MAX_REPLAY_COMMANDS &&
+        exportedReplay.resolvedShoes.length <= MAX_REPLAY_SHOES
+          ? { ...exportedReplay, commandElapsedMs }
+          : null;
+      const persistedReplay =
+        replayCandidate !== null &&
+        JSON.stringify(replayCandidate).length <= MAX_PERSISTED_REPLAY_BYTES
+          ? replayCandidate
+          : null;
+      const next = recordSession(
+        current,
+        {
+          id: sessionId,
+          completedAt,
+          presetId: state.config.presetId ?? "custom",
+          hands: view.analytics.handsPlayed,
+          startingBankrollCents: state.config.limits.startingBankrollCents,
+          endingBankrollCents: view.bankrollCents,
+          decisionQuality,
+          discipline,
+          intent: sessionIntent,
+          intentScore: scoreIntent(sessionIntent, skillResults, discipline),
+          skillResults,
+          completionReason,
+          mistakes,
+          replay: persistedReplay
+        },
+        skillResults
+      );
+      if (writeBrowserAppData(next)) {
+        persistedKey.current = key;
+        return true;
+      } else {
+        queueMicrotask(() => {
+          setPersistenceError(
+            "Session finished, but browser progress could not be saved."
+          );
+        });
+        return false;
+      }
+    },
+    [
+      basicAttempts,
+      basicCorrect,
+      commandElapsedMs,
+      decisionAttempts,
+      decisionCorrect,
+      deviationAttempts,
+      deviationCorrect,
+      insuranceAttempts,
+      insuranceCorrect,
+      mistakes,
+      mode,
+      modePolicy.scoreDecisions,
+      seed,
+      state,
+      view
+    ]
+  );
+
+  useEffect(() => {
+    if (view.terminalReason === null) return;
+    const key = `${seed}:${view.analytics.handsPlayed}:${view.terminalReason}`;
+    persistSession(TERMINAL_LABELS[view.terminalReason], key);
+  }, [persistSession, seed, view.analytics.handsPlayed, view.terminalReason]);
+
+  const endSessionAndReview = useCallback(() => {
+    setEndingSession(true);
+    setPersistenceError("");
+    const terminalReason = view.terminalReason;
+    const completionReason =
+      terminalReason === null
+        ? "Ended by player"
+        : TERMINAL_LABELS[terminalReason];
+    const key = `${seed}:${view.analytics.handsPlayed}:${terminalReason ?? "manual_end"}`;
+    if (persistSession(completionReason, key)) {
+      router.push("/review");
     } else {
-      queueMicrotask(() => {
-        setPersistenceError(
-          "Session finished, but browser progress could not be saved."
-        );
-      });
+      setEndingSession(false);
     }
   }, [
-    basicAttempts,
-    basicCorrect,
-    commandElapsedMs,
-    decisionAttempts,
-    decisionCorrect,
-    deviationAttempts,
-    deviationCorrect,
-    insuranceAttempts,
-    insuranceCorrect,
-    mistakes,
-    modePolicy,
-    mode,
+    persistSession,
+    router,
     seed,
-    state,
-    view
+    view.analytics.handsPlayed,
+    view.terminalReason
   ]);
 
   const submitTraining = useCallback(
@@ -743,14 +823,40 @@ export function BlackjackTable({
               total={view.dealerHand?.total ?? null}
             />
 
-            <div className={styles.wagerMarker}>
-              <span>Wager</span>
-              <strong>
-                {view.pendingBetCents > 0
-                  ? formatCents(view.pendingBetCents)
-                  : "No bet"}
-              </strong>
-            </div>
+            {view.canInsure || view.canDeclineInsurance ? (
+              <div
+                aria-label="Insurance decision"
+                className={styles.insurancePrompt}
+                ref={insurancePromptRef}
+                role="group"
+                tabIndex={-1}
+              >
+                <span>Dealer shows an ace</span>
+                <button
+                  disabled={!view.canInsure}
+                  onClick={() => performInsurance(true)}
+                  type="button"
+                >
+                  Take insurance
+                </button>
+                <button
+                  disabled={!view.canDeclineInsurance}
+                  onClick={() => performInsurance(false)}
+                  type="button"
+                >
+                  Decline
+                </button>
+              </div>
+            ) : (
+              <div className={styles.wagerMarker}>
+                <span>Wager</span>
+                <strong>
+                  {selectedWagerCents === null
+                    ? "No bet"
+                    : formatCents(selectedWagerCents)}
+                </strong>
+              </div>
+            )}
 
             <div className={styles.playerHands}>
               {view.playerHands.length === 0 ? (
@@ -814,7 +920,7 @@ export function BlackjackTable({
               >
                 {betChoices.map((amount) => (
                   <button
-                    aria-pressed={view.pendingBetCents === amount}
+                    aria-pressed={selectedWagerCents === amount}
                     disabled={
                       !view.canPlaceBet ||
                       amount > view.bankrollCents ||
@@ -838,10 +944,10 @@ export function BlackjackTable({
                 <button
                   aria-label="Deal"
                   className={styles.dealButton}
-                  disabled={!view.canDeal}
+                  disabled={!canDealSelectedWager}
                   onClick={() => {
                     controlsRef.current?.focus();
-                    startRound();
+                    dealSelectedWager();
                   }}
                   type="button"
                 >
@@ -901,34 +1007,17 @@ export function BlackjackTable({
                 <p>{strategyNotice.message}</p>
               </section>
             )}
-
-            {view.canInsure || view.canDeclineInsurance ? (
-              <div className={styles.insurancePrompt}>
-                <span>Dealer shows an ace</span>
-                <button
-                  disabled={!view.canInsure}
-                  onClick={() => performInsurance(true)}
-                  type="button"
-                >
-                  Take insurance
-                </button>
-                <button
-                  disabled={!view.canDeclineInsurance}
-                  onClick={() => performInsurance(false)}
-                  type="button"
-                >
-                  Decline
-                </button>
-              </div>
-            ) : null}
           </section>
         </section>
 
         <TrainingRail
           decisionFeedbackLog={decisionFeedbackLog}
+          currentPresetId={state.config.presetId ?? ""}
           lastFeedback={lastFeedback}
           mode={mode}
+          selectedWagerCents={selectedWagerCents}
           settledGuide={lastGuide}
+          tableMinimumCents={tableMinimumCents}
           view={view}
         />
       </div>
@@ -1048,24 +1137,6 @@ export function BlackjackTable({
           </form>
         </details>
         <button
-          disabled={view.phase === "stopped"}
-          onClick={() =>
-            dispatch({
-              type: "tighten_limits",
-              limits: {
-                maxHands:
-                  view.analytics.handsPlayed +
-                  (view.phase === "player" || view.phase === "insurance"
-                    ? 1
-                    : 0)
-              }
-            })
-          }
-          type="button"
-        >
-          End at this round
-        </button>
-        <button
           aria-controls="trueedge-replay-data"
           aria-expanded={replayVisible}
           onClick={() => setReplayVisible((visible) => !visible)}
@@ -1105,6 +1176,20 @@ export function BlackjackTable({
             </p>
           </div>
         )}
+      </section>
+
+      <section className={styles.endSessionBar} aria-label="Session completion">
+        <button
+          disabled={endingSession}
+          onClick={endSessionAndReview}
+          type="button"
+        >
+          {endingSession
+            ? "Saving session"
+            : view.terminalReason === null
+              ? "End session and review"
+              : "Review session"}
+        </button>
       </section>
 
       <footer className={styles.disclaimer}>

@@ -14,6 +14,7 @@ import {
 } from "@trueedge/game-core";
 
 import type { TrainingMode } from "../features/table/TrainingRail";
+import { catalogTableMinimumCents } from "./catalogPreset";
 import { readSeed } from "./seed";
 
 export type SearchQuery = Readonly<
@@ -221,7 +222,11 @@ export function parseSessionQuery(query: SearchQuery): ParsedSessionQuery {
     deviationProfileId
   );
 
-  const tableMinimumCents = dollars(query.minBet, 500, 1_000_000);
+  const tableMinimumCents = dollars(
+    query.minBet,
+    catalogTableMinimumCents(presetId) ?? 500,
+    1_000_000
+  );
   const startingBankrollCents = dollars(
     query.bankroll,
     DEFAULT_SESSION_CONFIG.limits.startingBankrollCents

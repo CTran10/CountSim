@@ -115,6 +115,12 @@
   padding: 9px 12px;
 }
 
+.compactChoice input:disabled + span {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .fields {
   display: grid;
   gap: 12px;

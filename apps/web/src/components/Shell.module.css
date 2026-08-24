@@ -31,37 +31,68 @@
   z-index: 20;
 }
 
-.brand,
-.mobileBrand {
+.themeToggle {
   align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  cursor: pointer;
   display: flex;
-  gap: 10px;
-  text-decoration: none;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 7px 9px;
 }
 
-.brand {
+.themeToggle:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.sidebarTheme {
   margin: 0 8px 38px;
+  width: calc(100% - 16px);
 }
 
-.brand > span,
-.mobileBrand > span {
-  align-items: center;
-  background: var(--signal);
-  color: var(--signal-ink);
-  display: inline-flex;
+.themeLabel {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  font-weight: 800;
-  height: 28px;
-  justify-content: center;
-  letter-spacing: -0.04em;
-  width: 28px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.brand strong,
-.mobileBrand strong {
-  font-size: 16px;
-  letter-spacing: -0.02em;
+.themeTrack {
+  background: var(--surface-inset);
+  border: 1px solid var(--line-strong);
+  display: block;
+  flex: 0 0 auto;
+  height: 16px;
+  padding: 2px;
+  width: 30px;
+}
+
+.themeThumb {
+  background: var(--muted);
+  display: block;
+  height: 10px;
+  transform: translateX(0);
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease;
+  width: 10px;
+}
+
+.themeToggle[aria-checked="true"] .themeThumb {
+  background: var(--signal);
+  transform: translateX(14px);
+}
+
+.mobileTheme {
+  margin-left: auto;
+  width: auto;
 }
 
 .sidebar nav {
@@ -90,26 +121,6 @@
   background: var(--surface-raised);
   border-color: var(--signal);
   color: var(--ink);
-}
-
-.sidebarFoot {
-  border-top: 1px solid var(--line);
-  margin-top: auto;
-  padding: 16px 8px 0;
-}
-
-.sidebarFoot span {
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.sidebarFoot p {
-  color: var(--ink-soft);
-  font-size: 12px;
-  margin: 5px 0 0;
 }
 
 .main {
@@ -145,11 +156,6 @@
     right: 0;
     top: 0;
     z-index: 30;
-  }
-
-  .mobileBrand > span {
-    height: 24px;
-    width: 24px;
   }
 
   .mobileHeader nav {

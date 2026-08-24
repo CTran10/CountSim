@@ -2,6 +2,7 @@ import { parseSessionReplay, type SessionReplay } from "@trueedge/game-core";
 
 export const APP_DATA_VERSION = 1 as const;
 export const APP_DATA_KEY = "trueedge:local-data:v1";
+export const APP_DATA_CHANGED_EVENT = "trueedge:local-data-changed";
 export const MAX_STORED_BYTES = 512_000;
 
 export const SKILL_IDS = [
@@ -419,7 +420,7 @@ export function writeBrowserAppData(data: AppData): boolean {
   if (typeof window === "undefined") return false;
   try {
     const saved = writeAppData(window.localStorage, data);
-    if (saved) window.dispatchEvent(new Event("trueedge:local-data-changed"));
+    if (saved) window.dispatchEvent(new Event(APP_DATA_CHANGED_EVENT));
     return saved;
   } catch {
     return false;

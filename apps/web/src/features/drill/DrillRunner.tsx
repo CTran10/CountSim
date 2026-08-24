@@ -6,10 +6,12 @@ import {
   evaluateInsuranceDeviation,
   generateCountingDrill,
   generateDecisionScenario,
+  hiLoValue,
   type PlayerAction
 } from "@trueedge/game-core";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { betUnitsForTrueCount } from "../../lib/betRamp";
 import {
   readBrowserAppData,
   recordSkillAttempt,
@@ -27,6 +29,7 @@ const ACTIONS: readonly PlayerAction[] = [
 ];
 
 const SKILL_BY_KIND: Readonly<Record<string, StoredSkillId>> = {
+  "count-practice": "running_count",
   "running-count": "running_count",
   "deck-estimation": "deck_estimation",
   "true-count": "true_count",
@@ -69,6 +72,17 @@ interface FullLoadScenario {
   readonly explanation: string;
 }
 
+export interface CountPracticeScenario {
+  readonly type: "count-practice";
+  readonly prompt: string;
+  readonly context: string;
+  readonly cards: readonly string[];
+  readonly focusIndex: number;
+  readonly cardValue: number;
+  readonly runningCount: number;
+  readonly trueCount: number;
+}
+
 interface FullLoadAnswers {
   readonly runningCount: string;
   readonly decksRemaining: string;
@@ -77,7 +91,14 @@ interface FullLoadAnswers {
   readonly action: string;
 }
 
-type Scenario = NumericScenario | ActionScenario | FullLoadScenario;
+interface CountPracticeAnswers {
+  readonly cardValue: string;
+  readonly runningCount: string;
+  readonly trueCount: string;
+}
+
+type Scenario =
+  NumericScenario | ActionScenario | FullLoadScenario | CountPracticeScenario;
 
 const EMPTY_FULL_ANSWERS: FullLoadAnswers = {
   runningCount: "",
@@ -85,6 +106,12 @@ const EMPTY_FULL_ANSWERS: FullLoadAnswers = {
   trueCount: "",
   betUnits: "",
   action: ""
+};
+
+const EMPTY_COUNT_PRACTICE_ANSWERS: CountPracticeAnswers = {
+  cardValue: "",
+  runningCount: "",
+  trueCount: ""
 };
 
 const FULL_LOAD_FIELDS: readonly {
@@ -97,16 +124,17 @@ const FULL_LOAD_FIELDS: readonly {
   { label: "Bet units", field: "betUnits" }
 ];
 
+const COUNT_PRACTICE_FIELDS: readonly {
+  readonly label: string;
+  readonly field: keyof CountPracticeAnswers;
+}[] = [
+  { label: "Outlined card value", field: "cardValue" },
+  { label: "Final running count", field: "runningCount" },
+  { label: "Truncated true count", field: "trueCount" }
+];
+
 function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value);
-}
-
-function betUnitsFor(trueCount: number): number {
-  if (trueCount <= 0) return 1;
-  if (trueCount === 1) return 2;
-  if (trueCount === 2) return 4;
-  if (trueCount === 3) return 6;
-  return 8;
 }
 
 function actionForScenario(
@@ -126,7 +154,44 @@ function actionForScenario(
   };
 }
 
+export function buildCountPracticeScenario(
+  seed: number
+): CountPracticeScenario {
+  const startingCount = (seed % 9) - 4;
+  const focusIndex = seed % 8;
+  const decksRemaining = 1 + ((seed >>> 3) % 7) / 2;
+  const drill = generateCountingDrill({
+    seed,
+    length: 8,
+    startingCount
+  });
+  const focusCard = drill.cards[focusIndex]!;
+  const trueCount = calculateTrueCount({
+    runningCount: drill.finalRunningCount,
+    cardsRemaining: decksRemaining * 52,
+    estimation: "exact",
+    resolution: "truncate"
+  }).trueCountResolved;
+
+  return {
+    type: "count-practice",
+    prompt: "Value the outlined card, finish the count, then convert it.",
+    context: `Start at RC ${signed(startingCount)}. ${decksRemaining.toFixed(1)} decks remain. Truncate the true count.`,
+    cards: drill.cards.map(
+      (card) => `${card.rank}${card.suit[0]!.toUpperCase()}`
+    ),
+    focusIndex,
+    cardValue: hiLoValue(focusCard),
+    runningCount: drill.finalRunningCount,
+    trueCount
+  };
+}
+
 function buildScenario(kind: string, seed: number): Scenario {
+  if (kind === "count-practice") {
+    return buildCountPracticeScenario(seed);
+  }
+
   if (kind === "running-count") {
     const drill = generateCountingDrill({ seed, length: 12 });
     return {
@@ -220,14 +285,14 @@ function buildScenario(kind: string, seed: number): Scenario {
     return {
       type: "full-load",
       prompt: decisionScenario.prompt,
-      context: `Start at RC ${signed(startingCount)}. After this exposed-card run, the shoe marker reads ${decksRemaining.toFixed(1)} decks remaining. Use the 1–2–4–6–8 unit ramp for TC 0 or lower through TC +4 or higher.`,
+      context: `Start at RC ${signed(startingCount)}. After this exposed-card run, the shoe marker reads ${decksRemaining.toFixed(1)} decks remaining. Use the 1-2-4-6-8 unit ramp for TC 0 or lower through TC +4 or higher.`,
       cards: run.cards.map(
         (card) => `${card.rank}${card.suit[0]!.toUpperCase()}`
       ),
       runningCount,
       decksRemaining,
       trueCount: decisionScenario.trueCount,
-      betUnits: betUnitsFor(decisionScenario.trueCount),
+      betUnits: betUnitsForTrueCount(decisionScenario.trueCount),
       action: decision.action,
       actionSkill: decision.indexed ? "deviations" : "basic_strategy",
       explanation: decision.explanation
@@ -264,6 +329,8 @@ export function DrillRunner({ kind }: { readonly kind: string }) {
   const [answer, setAnswer] = useState("");
   const [fullAnswers, setFullAnswers] =
     useState<FullLoadAnswers>(EMPTY_FULL_ANSWERS);
+  const [countPracticeAnswers, setCountPracticeAnswers] =
+    useState<CountPracticeAnswers>(EMPTY_COUNT_PRACTICE_ANSWERS);
   const [startedAt, setStartedAt] = useState(() => performance.now());
   const [result, setResult] = useState<{
     readonly correct: boolean;
@@ -287,7 +354,12 @@ export function DrillRunner({ kind }: { readonly kind: string }) {
   }
 
   function submit(candidate: string, decisionTimeMs: number) {
-    if (result !== null || scenario.type === "full-load") return;
+    if (
+      result !== null ||
+      scenario.type === "full-load" ||
+      scenario.type === "count-practice"
+    )
+      return;
     if (scenario.type === "numeric" && candidate.trim() === "") {
       setValidationError("Enter a numeric answer before checking it.");
       return;
@@ -421,11 +493,88 @@ export function DrillRunner({ kind }: { readonly kind: string }) {
     });
   }
 
+  function submitCountPractice(decisionTimeMs: number) {
+    if (result !== null || scenario.type !== "count-practice") return;
+    if (
+      countPracticeAnswers.cardValue.trim() === "" ||
+      countPracticeAnswers.runningCount.trim() === "" ||
+      countPracticeAnswers.trueCount.trim() === ""
+    ) {
+      setValidationError("Complete all three count answers before scoring.");
+      return;
+    }
+    const submittedValues = Object.values(countPracticeAnswers).map(Number);
+    if (
+      submittedValues.some(
+        (value) => !Number.isFinite(value) || !Number.isInteger(value)
+      )
+    ) {
+      setValidationError(
+        "Enter whole-number count values for all three answers."
+      );
+      return;
+    }
+    setValidationError("");
+    const checks = [
+      {
+        id: "card-value",
+        skill: "running_count" as const,
+        submitted: countPracticeAnswers.cardValue,
+        expected: String(scenario.cardValue),
+        correct: Number(countPracticeAnswers.cardValue) === scenario.cardValue
+      },
+      {
+        id: "running-count",
+        skill: "running_count" as const,
+        submitted: countPracticeAnswers.runningCount,
+        expected: String(scenario.runningCount),
+        correct:
+          Number(countPracticeAnswers.runningCount) === scenario.runningCount
+      },
+      {
+        id: "true-count",
+        skill: "true_count" as const,
+        submitted: countPracticeAnswers.trueCount,
+        expected: String(scenario.trueCount),
+        correct: Number(countPracticeAnswers.trueCount) === scenario.trueCount
+      }
+    ];
+    const correctParts = checks.filter((check) => check.correct).length;
+    const correct = correctParts === checks.length;
+    const message = `${correctParts}/3 correct. Card ${signed(scenario.cardValue)}, RC ${signed(scenario.runningCount)}, TC ${signed(scenario.trueCount)}.`;
+    setScore((current) => ({
+      attempts: current.attempts + 1,
+      correct: current.correct + (correct ? 1 : 0)
+    }));
+    let nextData = readBrowserAppData();
+    for (const check of checks) {
+      nextData = recordSkillAttempt(nextData, check.skill, check.correct, {
+        id: attemptId(`drill-count-practice-${seed}-${check.id}`),
+        completedAt: new Date().toISOString(),
+        skill: check.skill,
+        prompt: `${scenario.context} ${scenario.prompt}`,
+        submitted: check.submitted,
+        expected: check.expected,
+        correct: check.correct,
+        errorClass: check.skill,
+        decisionTimeMs,
+        algorithmVersion: "training-v1",
+        profileVersion: "hi-lo"
+      });
+    }
+    const saved = writeBrowserAppData(nextData);
+    setResult({
+      correct,
+      message: saved ? message : `${message} Progress could not be saved.`
+    });
+  }
+
   function next() {
     focusAfterNext.current = true;
     setSeed((value) => (value + 7919) >>> 0);
     setAnswer("");
     setFullAnswers(EMPTY_FULL_ANSWERS);
+    setCountPracticeAnswers(EMPTY_COUNT_PRACTICE_ANSWERS);
     setResult(null);
     setValidationError("");
     setStartedAt(performance.now());
@@ -452,9 +601,20 @@ export function DrillRunner({ kind }: { readonly kind: string }) {
 
       {scenario.type !== "action" && scenario.cards !== undefined ? (
         <div className={styles.cardRun} aria-label="Counting card sequence">
-          {scenario.cards.map((card, index) => (
-            <b key={`${card}-${index}`}>{card}</b>
-          ))}
+          {scenario.cards.map((card, index) => {
+            const focus =
+              scenario.type === "count-practice" &&
+              scenario.focusIndex === index;
+            return (
+              <b
+                aria-label={focus ? `Outlined card: ${card}` : card}
+                className={focus ? styles.focusCard : undefined}
+                key={`${card}-${index}`}
+              >
+                {card}
+              </b>
+            );
+          })}
         </div>
       ) : null}
 
@@ -531,6 +691,39 @@ export function DrillRunner({ kind }: { readonly kind: string }) {
           </fieldset>
           <button disabled={result !== null} type="submit">
             Score all five steps
+          </button>
+        </form>
+      ) : scenario.type === "count-practice" ? (
+        <form
+          className={styles.countPractice}
+          onSubmit={(event) => {
+            event.preventDefault();
+            submitCountPractice(
+              Math.max(0, Math.round(performance.now() - startedAt))
+            );
+          }}
+        >
+          <div className={styles.countFields}>
+            {COUNT_PRACTICE_FIELDS.map(({ label, field }) => (
+              <label key={field}>
+                <span>{label}</span>
+                <input
+                  disabled={result !== null}
+                  inputMode="decimal"
+                  onChange={(event) =>
+                    setCountPracticeAnswers((current) => ({
+                      ...current,
+                      [field]: event.target.value
+                    }))
+                  }
+                  required
+                  value={countPracticeAnswers[field]}
+                />
+              </label>
+            ))}
+          </div>
+          <button disabled={result !== null} type="submit">
+            Score count practice
           </button>
         </form>
       ) : (

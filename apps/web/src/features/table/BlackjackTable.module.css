@@ -27,9 +27,9 @@
 .handHeading h2,
 .wagerMarker span,
 .notice > span,
-.railHeading span,
-.countPair span,
-.analysisNote span,
+.decisionCard > span,
+.countReference > span,
+.wagerGuide > span,
 .shoeMeter span {
   color: var(--muted);
   font-size: 10px;
@@ -54,7 +54,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 290px;
+  grid-template-columns: minmax(0, 1fr) 304px;
 }
 
 .tableColumn {
@@ -313,8 +313,7 @@
 }
 
 .betActions,
-.playActions,
-.insurancePrompt {
+.playActions {
   display: flex;
   gap: 6px;
 }
@@ -325,7 +324,7 @@
 .practicePanel button,
 .sessionTools button,
 .sessionTools summary {
-  min-height: 39px;
+  min-height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
@@ -334,6 +333,11 @@
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    border-color 150ms ease-out,
+    color 150ms ease-out,
+    background-color 150ms ease-out,
+    transform 150ms ease-out;
 }
 
 .betActions button:hover:not(:disabled),
@@ -344,6 +348,15 @@
 .sessionTools summary:hover {
   border-color: var(--signal);
   color: var(--ink);
+}
+
+.betActions button:active:not(:disabled),
+.playActions button:active:not(:disabled),
+.insurancePrompt button:active:not(:disabled),
+.practicePanel button:active:not(:disabled),
+.sessionTools button:active:not(:disabled),
+.sessionTools summary:active {
+  transform: translateY(1px);
 }
 
 .betActions button:disabled,
@@ -362,13 +375,14 @@
 
 .playActions {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: minmax(102px, 1.5fr) repeat(5, minmax(0, 1fr));
 }
 
 .playActions .dealButton {
   border-color: var(--signal);
   color: var(--signal-ink);
   background: var(--signal);
+  white-space: nowrap;
 }
 
 .playActions .dealButton:disabled {
@@ -384,14 +398,29 @@
 }
 
 .insurancePrompt {
-  grid-column: 1 / -1;
   align-items: center;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin: -8px auto;
+  padding: 8px;
+  position: relative;
+  width: min(430px, 100%);
+  z-index: 1;
+  border: 1px solid var(--signal);
+  background: var(--surface-inset);
+}
+
+.insurancePrompt:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.insurancePrompt button {
+  white-space: nowrap;
 }
 
 .insurancePrompt span {
-  margin-right: auto;
   color: var(--signal);
   font-size: 11px;
   font-weight: 700;
@@ -410,89 +439,197 @@
 .railBody {
   position: sticky;
   top: 24px;
-  padding: 25px 21px;
+  padding: 22px 20px;
 }
 
-.railHeading {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 20px;
+.gameChooser {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+}
+
+.gameChooser form {
+  display: grid;
+  gap: 7px;
+}
+
+.gameChooser label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gameChooser select,
+.gameChooser button {
+  border: 1px solid var(--line-strong);
+  min-height: 36px;
+}
+
+.gameChooser select {
+  background: var(--surface);
+  color: var(--ink);
+  min-width: 0;
+  padding: 0 8px;
+  width: 100%;
+}
+
+.gameChooser button {
+  background: transparent;
+  color: var(--signal);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 750;
+  padding: 0 10px;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.gameChooser button:active {
+  transform: translateY(1px);
+}
+
+.decisionCard {
+  padding-bottom: 19px;
   border-bottom: 1px solid var(--line);
 }
 
-.railHeading h2 {
-  margin: 5px 0 0;
-  font-size: 19px;
+.decisionCard h2 {
+  margin: 7px 0 0;
+  color: var(--signal);
+  font-size: 24px;
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
-.railHeading b {
-  align-self: start;
-  color: var(--signal);
+.decisionCard p,
+.wagerGuide p,
+.shoeMeter p {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.decisionMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+.decisionMeta div {
+  display: grid;
+  gap: 5px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.decisionMeta dt,
+.countSnapshot dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.decisionMeta dd {
+  margin: 0;
+  color: var(--ink);
   font:
-    700 9px/1 ui-monospace,
+    700 11px/1.2 ui-monospace,
     SFMono-Regular,
     Menlo,
     monospace;
-  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
 }
 
-.countPair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 23px 0;
+.countSnapshot {
+  padding: 18px 0;
   border-bottom: 1px solid var(--line);
 }
 
-.countPair > div {
+.countSnapshot dl {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
 }
 
-.countPair > div + div {
-  padding-left: 18px;
+.countSnapshot div {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.countSnapshot div + div {
+  padding-left: 11px;
   border-left: 1px solid var(--line);
 }
 
-.countPair strong {
+.countSnapshot dd {
+  margin: 0;
   color: var(--signal);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 34px;
-}
-
-.metrics {
-  margin: 0;
-  padding: 15px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.metrics div {
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.metrics dt {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.metrics dd {
-  margin: 0;
-  color: var(--ink-soft);
   font:
-    700 11px/1 ui-monospace,
+    700 20px/1 ui-monospace,
     SFMono-Regular,
     Menlo,
     monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-.analysisNote {
+.countReference {
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.countReference dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.countReference div {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.countReference dt {
+  color: var(--signal);
+  font:
+    700 12px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.countReference dd {
+  margin: 0;
+  color: var(--ink-soft);
+  font:
+    700 11px/1.3 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  word-spacing: 4px;
+}
+
+.wagerGuide {
   padding: 18px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.wagerGuide strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--ink);
+  font-size: 15px;
 }
 
 .decisionLog {
@@ -519,14 +656,7 @@
   color: var(--ink-soft);
   font-size: 10px;
   line-height: 1.45;
-}
-
-.analysisNote p,
-.shoeMeter p {
-  margin: 7px 0 0;
-  color: var(--ink-soft);
-  font-size: 11px;
-  line-height: 1.55;
+  text-wrap: pretty;
 }
 
 .shoeMeter {
@@ -540,6 +670,7 @@
 
 .shoeMeter strong {
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .shoeMeter progress {
@@ -688,6 +819,39 @@
   text-transform: capitalize;
 }
 
+.endSessionBar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-inset);
+}
+
+.endSessionBar button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--signal);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--signal);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.endSessionBar button:hover:not(:disabled) {
+  background: var(--signal-tint);
+}
+
+.endSessionBar button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.endSessionBar button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .disclaimer {
   display: flex;
   justify-content: space-between;
@@ -779,16 +943,6 @@
     display: none;
   }
 
-  .railHeading {
-    display: none;
-  }
-
-  .metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 20px;
-  }
-
   .practicePanel {
     grid-template-columns: 1fr;
   }
@@ -852,18 +1006,9 @@
     display: none;
   }
 
-  .insurancePrompt {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
   .strategyNotice {
     grid-template-columns: 1fr;
     gap: 5px;
-  }
-
-  .insurancePrompt span {
-    grid-column: 1 / -1;
   }
 
   .sessionTools form {

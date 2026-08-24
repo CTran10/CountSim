@@ -1,14 +1,20 @@
 "use client";
 
+import { BLACK_HAWK_PRESETS } from "@trueedge/casino-catalog";
 import {
   evaluateDeviation,
+  evaluateInsuranceDeviation,
   recommendBasicStrategy,
   resolveDeviationProfileForRules,
   type PlayerAction,
   type TableView
 } from "@trueedge/game-core";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
 
+import { betUnitsForTrueCount, wagerForUnits } from "../../lib/betRamp";
+import { formatCents } from "../../lib/format";
+import { updateSelectedGameId } from "../../lib/gamePreference";
+import { useAppData } from "../../lib/useAppData";
 import styles from "./BlackjackTable.module.css";
 
 export type TrainingMode = "play" | "observation" | "practice" | "decision";
@@ -21,6 +27,24 @@ export interface DecisionGuide {
   readonly index: number | null;
   readonly profileId: string;
 }
+
+interface DisplayDecision {
+  readonly action: string;
+  readonly explanation: string;
+  readonly index: number | null;
+  readonly label: string;
+}
+
+interface WagerSignal {
+  readonly action: string;
+  readonly explanation: string;
+}
+
+const HI_LO_REFERENCE = [
+  { ranks: "2 3 4 5 6", value: "+1" },
+  { ranks: "7 8 9", value: "0" },
+  { ranks: "10 J Q K A", value: "-1" }
+] as const;
 
 export function deriveDeviationProfileId(view: TableView): string {
   return resolveDeviationProfileForRules(view.rules, view.deviationProfileId);
@@ -84,20 +108,213 @@ function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }
 
+function actionLabel(action: string): string {
+  if (action === "insurance") return "Take insurance";
+  if (action === "decline") return "Decline insurance";
+  return `${action[0]?.toUpperCase() ?? ""}${action.slice(1)}`;
+}
+
+function deriveInsuranceGuide(view: TableView): DisplayDecision | null {
+  if (view.phase !== "insurance") return null;
+  const profile = deriveDeviationProfileId(view);
+  if (profile === "basic-strategy-only") {
+    return {
+      action: "Decline insurance",
+      explanation:
+        "No compatible count-based insurance profile is selected, so decline insurance.",
+      index: null,
+      label: "Insurance decision"
+    };
+  }
+  const decision = evaluateInsuranceDeviation({
+    profile,
+    rules: view.rules,
+    trueCount: view.count.trueCountResolved
+  });
+  return {
+    action: actionLabel(decision.action),
+    explanation: decision.explanation,
+    index: decision.entry.index,
+    label: "Insurance decision"
+  };
+}
+
+function deriveDisplayDecision({
+  decisionFeedback,
+  guide,
+  lastFeedback,
+  reveal,
+  selectedWagerCents,
+  view
+}: {
+  readonly decisionFeedback: boolean;
+  readonly guide: DecisionGuide | null;
+  readonly lastFeedback: string | null;
+  readonly reveal: boolean;
+  readonly selectedWagerCents: number | null;
+  readonly view: TableView;
+}): DisplayDecision {
+  if (decisionFeedback && !reveal && lastFeedback !== null) {
+    return {
+      action: lastFeedback.startsWith("Correct:") ? "Correct" : "Review",
+      explanation: lastFeedback,
+      index: null,
+      label: "Decision feedback"
+    };
+  }
+
+  if (!reveal && (view.phase === "player" || view.phase === "insurance")) {
+    return {
+      action: "Make your play",
+      explanation: "Decision guidance appears after the hand.",
+      index: null,
+      label: "Next decision"
+    };
+  }
+
+  const insurance = deriveInsuranceGuide(view);
+  if (insurance !== null) return insurance;
+
+  if (view.phase === "player" && guide !== null) {
+    return {
+      action: actionLabel(guide.action),
+      explanation: guide.explanation,
+      index: guide.index,
+      label: "Next decision"
+    };
+  }
+
+  if (
+    (view.phase === "settled" || view.phase === "stopped") &&
+    guide !== null
+  ) {
+    return {
+      action: actionLabel(guide.action),
+      explanation: lastFeedback ?? guide.explanation,
+      index: guide.index,
+      label: "Last decision"
+    };
+  }
+
+  if (view.phase === "stopped") {
+    return {
+      action: "Session complete",
+      explanation: "Review the completed hands or export the replay.",
+      index: null,
+      label: "Session"
+    };
+  }
+
+  const readyWagerCents =
+    view.pendingBetCents > 0 ? view.pendingBetCents : selectedWagerCents;
+  if (readyWagerCents !== null) {
+    return {
+      action: "Deal the hand",
+      explanation: `${formatCents(readyWagerCents)} is selected. Deal when ready.`,
+      index: null,
+      label: "Next step"
+    };
+  }
+
+  return {
+    action: "Choose a wager",
+    explanation: "Your selected wager stays ready for the next Deal.",
+    index: null,
+    label: "Next step"
+  };
+}
+
+function deriveWagerSignal(
+  view: TableView,
+  reveal: boolean,
+  tableMinimumCents: number
+): WagerSignal {
+  if (view.phase === "stopped") {
+    return {
+      action: "Session complete",
+      explanation: "No additional wager is available in this session."
+    };
+  }
+  if (!reveal) {
+    return {
+      action: "Check after the hand",
+      explanation: "Count-based wager guidance stays hidden during play."
+    };
+  }
+  if (view.shoe.shuffleMode === "continuous") {
+    return {
+      action: `Stay at 1 unit (${formatCents(tableMinimumCents)})`,
+      explanation: "This CSM model resets the traditional count between hands."
+    };
+  }
+  if (view.shoe.shufflePending) {
+    return {
+      action: `Reset to 1 unit (${formatCents(tableMinimumCents)})`,
+      explanation:
+        "The shoe shuffles and the count resets before the next hand."
+    };
+  }
+  const trueCount = view.count.trueCountResolved;
+  const units = betUnitsForTrueCount(trueCount);
+  const uncappedWagerCents = units * tableMinimumCents;
+  const wagerCents = wagerForUnits(
+    units,
+    tableMinimumCents,
+    view.limits.maxBetCents
+  );
+  if (units > 1) {
+    const target =
+      wagerCents < uncappedWagerCents
+        ? `${units}-unit target, ${formatCents(wagerCents)} cap`
+        : `${units} units (${formatCents(wagerCents)})`;
+    const nextStep =
+      units === 8
+        ? "This is the top of the 1-2-4-6-8 training ramp."
+        : `Move to ${betUnitsForTrueCount(trueCount + 1)} units at TC ${signed(trueCount + 1)}.`;
+    return {
+      action:
+        view.phase === "betting" || view.phase === "settled"
+          ? `Set ${target}`
+          : `Next hand: ${target}`,
+      explanation: `Current TC ${signed(trueCount)}. ${nextStep}`
+    };
+  }
+  return {
+    action: `Stay at 1 unit (${formatCents(tableMinimumCents)})`,
+    explanation: `Move to 2 units at TC +1. Current TC ${signed(trueCount)}.`
+  };
+}
+
 export function TrainingRail({
   view,
   mode,
   lastFeedback,
   decisionFeedbackLog,
-  settledGuide
+  settledGuide,
+  selectedWagerCents,
+  tableMinimumCents,
+  currentPresetId
 }: {
   readonly view: TableView;
   readonly mode: TrainingMode;
   readonly lastFeedback: string | null;
   readonly decisionFeedbackLog: readonly string[];
   readonly settledGuide?: DecisionGuide | null;
+  readonly selectedWagerCents: number | null;
+  readonly tableMinimumCents: number;
+  readonly currentPresetId: string;
 }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const gameSelectId = useId();
+  const customGames = useAppData().customGames;
+  const availablePresetIds = useMemo(
+    () =>
+      new Set([...BLACK_HAWK_PRESETS, ...customGames].map((game) => game.id)),
+    [customGames]
+  );
+  const selectedPresetId = availablePresetIds.has(currentPresetId)
+    ? currentPresetId
+    : "";
   const liveGuide = useMemo(() => deriveDecisionGuide(view), [view]);
   const guide = liveGuide ?? settledGuide ?? null;
   const live = mode === "observation";
@@ -110,6 +327,15 @@ export function TrainingRail({
       ? 0
       : (view.shoe.cardsDealt / view.shoe.cutIndex) * 100
   );
+  const displayDecision = deriveDisplayDecision({
+    decisionFeedback,
+    guide,
+    lastFeedback: live ? null : lastFeedback,
+    reveal,
+    selectedWagerCents,
+    view
+  });
+  const wagerSignal = deriveWagerSignal(view, reveal, tableMinimumCents);
 
   useEffect(() => {
     const media = window.matchMedia?.("(max-width: 900px)");
@@ -121,113 +347,110 @@ export function TrainingRail({
   return (
     <details className={styles.trainingRail} ref={detailsRef}>
       <summary>
-        <span>Training rail</span>
-        <strong>
-          {reveal ? `TC ${signed(view.count.trueCountResolved)}` : "Hidden"}
-        </strong>
+        <span>Decision guide</span>
+        <strong>{displayDecision.action}</strong>
       </summary>
       <div className={styles.railBody}>
-        <header className={styles.railHeading}>
-          <div>
-            <span>{mode} mode</span>
-            <h2>
-              {live
-                ? "Live analysis"
-                : decisionFeedback
-                  ? "Decision feedback"
-                  : "Post-hand review"}
-            </h2>
-          </div>
-          <b>{live ? "LIVE" : "LOCKED"}</b>
-        </header>
-
-        <div className={styles.countPair}>
-          <div>
-            <span>Running count</span>
-            <strong>{reveal ? signed(view.count.runningCount) : "--"}</strong>
-          </div>
-          <div>
-            <span>True count</span>
-            <strong>
-              {reveal ? signed(view.count.trueCountResolved) : "--"}
-            </strong>
-          </div>
-        </div>
-
-        <dl className={styles.metrics}>
-          <div>
-            <dt>Cards seen</dt>
-            <dd>{reveal ? view.count.cardsSeen : "--"}</dd>
-          </div>
-          <div>
-            <dt>Last card to RC</dt>
-            <dd>
-              {!reveal || view.count.lastExposedCard === null
-                ? "--"
-                : `${view.count.lastExposedCard.rank} -> ${signed(view.count.lastCardCountValue ?? 0)}`}
-            </dd>
-          </div>
-          <div>
-            <dt>Decks remain</dt>
-            <dd>
-              {reveal ? view.count.decksRemainingEstimated.toFixed(1) : "--"}
-            </dd>
-          </div>
-          <div>
-            <dt>Raw true count</dt>
-            <dd>{reveal ? view.count.trueCountRaw.toFixed(2) : "--"}</dd>
-          </div>
-          <div>
-            <dt>Convention</dt>
-            <dd>
-              {view.countSettings.estimation} / {view.countSettings.resolution}
-            </dd>
-          </div>
-          <div>
-            <dt>Basic play</dt>
-            <dd>
-              {reveal ? (guide?.basicAction.toUpperCase() ?? "WAIT") : "--"}
-            </dd>
-          </div>
-          <div>
-            <dt>Indexed play</dt>
-            <dd>
-              {reveal && guide?.deviation
-                ? guide.action.toUpperCase()
-                : reveal
-                  ? "NONE"
-                  : "--"}
-            </dd>
-          </div>
-          <div>
-            <dt>Profile / index</dt>
-            <dd>
-              {reveal && guide !== null
-                ? `${guide.profileId.replace("hi-lo-", "")} / ${guide.index ?? "--"}`
-                : "--"}
-            </dd>
-          </div>
-          <div>
-            <dt>Discard tray</dt>
-            <dd>{reveal ? `${view.shoe.cardsDealt} cards` : "--"}</dd>
-          </div>
-        </dl>
+        <section aria-label="Game selection" className={styles.gameChooser}>
+          <form action="/setup" method="get">
+            <label htmlFor={gameSelectId}>Game preset</label>
+            <select
+              defaultValue={selectedPresetId}
+              id={gameSelectId}
+              key={
+                selectedPresetId === ""
+                  ? "custom-preset-loading"
+                  : selectedPresetId
+              }
+              name="preset"
+              onChange={(event) => updateSelectedGameId(event.target.value)}
+            >
+              {selectedPresetId === "" ? (
+                <option disabled value="">
+                  Current custom rules
+                </option>
+              ) : null}
+              <optgroup label="Preset games">
+                {BLACK_HAWK_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.venue} {preset.name}
+                  </option>
+                ))}
+              </optgroup>
+              {customGames.length === 0 ? null : (
+                <optgroup label="Saved games">
+                  {customGames.map((game) => (
+                    <option key={game.id} value={game.id}>
+                      {game.name} (saved)
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <button type="submit">Set up game</button>
+          </form>
+        </section>
 
         <section
           aria-label="Decision explanation"
           aria-live="polite"
-          className={styles.analysisNote}
+          className={styles.decisionCard}
         >
-          <span>Why</span>
-          <p>
-            {live
-              ? (guide?.explanation ?? "Deal a hand to see the decision model.")
-              : reveal || decisionFeedback
-                ? (lastFeedback ??
-                  guide?.explanation ??
-                  "Deal a hand to see the decision model.")
-                : "Analysis stays hidden until the round settles."}
-          </p>
+          <span>{displayDecision.label}</span>
+          <h2>{displayDecision.action}</h2>
+          <p>{displayDecision.explanation}</p>
+          {displayDecision.index === null || !reveal ? null : (
+            <dl className={styles.decisionMeta}>
+              <div>
+                <dt>Index trigger</dt>
+                <dd>TC {signed(displayDecision.index)}</dd>
+              </div>
+              <div>
+                <dt>Current TC</dt>
+                <dd>{signed(view.count.trueCountResolved)}</dd>
+              </div>
+            </dl>
+          )}
+        </section>
+
+        <section aria-label="Count snapshot" className={styles.countSnapshot}>
+          <dl>
+            <div>
+              <dt>Running</dt>
+              <dd>{reveal ? signed(view.count.runningCount) : "--"}</dd>
+            </div>
+            <div>
+              <dt>True count</dt>
+              <dd>{reveal ? signed(view.count.trueCountResolved) : "--"}</dd>
+            </div>
+            <div>
+              <dt>Decks left</dt>
+              <dd>
+                {reveal ? view.count.decksRemainingEstimated.toFixed(1) : "--"}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section
+          aria-label="Hi-Lo card values"
+          className={styles.countReference}
+        >
+          <span>Hi-Lo card values</span>
+          <dl>
+            {HI_LO_REFERENCE.map((group) => (
+              <div key={group.value}>
+                <dt>{group.value}</dt>
+                <dd>{group.ranks}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section aria-label="Wager guidance" className={styles.wagerGuide}>
+          <span>Wager signal</span>
+          <strong>{wagerSignal.action}</strong>
+          <p>{wagerSignal.explanation}</p>
         </section>
 
         {decisionFeedbackLog.length === 0 ? null : (
@@ -235,7 +458,7 @@ export function TrainingRail({
             className={styles.decisionLog}
             aria-label="Decision feedback log"
           >
-            <span>Decisions this round</span>
+            <span>Decisions this hand</span>
             <ol>
               {decisionFeedbackLog.map((feedback, index) => (
                 <li key={`${index}-${feedback}`}>{feedback}</li>
@@ -246,7 +469,7 @@ export function TrainingRail({
 
         <div className={styles.shoeMeter}>
           <div>
-            <span>Shoe position</span>
+            <span>Shoe to cut</span>
             <strong>{reveal ? `${Math.round(progress)}%` : "--"}</strong>
           </div>
           <progress
@@ -256,12 +479,12 @@ export function TrainingRail({
           />
           <p>
             {!reveal
-              ? "Shoe analysis unlocks when the round settles."
+              ? "Shoe position appears after the hand."
               : view.shoe.shuffleMode === "continuous"
-                ? "Continuous-shuffler approximation progressively returns dealt cards between rounds, so a traditional multi-round running count does not carry forward."
+                ? "Count resets between hands."
                 : view.shoe.shufflePending
-                  ? "Cut reached. The count resets before the next round."
-                  : "Only exposed cards enter the running count."}
+                  ? "Shuffle before the next hand."
+                  : `${view.shoe.cardsRemaining} cards remain in the shoe.`}
           </p>
         </div>
       </div>

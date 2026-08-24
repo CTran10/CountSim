@@ -3,20 +3,84 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DEFAULT_SESSION_CONFIG } from "@trueedge/game-core";
+import {
+  DEFAULT_SESSION_CONFIG,
+  applyCommand,
+  createSession
+} from "@trueedge/game-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { SELECTED_GAME_STORAGE_KEY } from "../../lib/gamePreference";
 import { readAppData } from "../../lib/storage";
 import { BlackjackTable } from "./BlackjackTable";
+
+const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock })
+}));
+
+function findAutoSettledBlackjackSeed(): number {
+  for (let seed = 0; seed <= 2_000; seed += 1) {
+    let state = createSession({ ...DEFAULT_SESSION_CONFIG, seed });
+    state = applyCommand(state, {
+      type: "place_bet",
+      amountCents: 500
+    }).state;
+    state = applyCommand(state, { type: "deal" }).state;
+    if (state.round?.result?.outcome === "blackjack") return seed;
+  }
+  throw new Error("No deterministic blackjack fixture was found.");
+}
 
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  pushMock.mockReset();
   vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
 describe("BlackjackTable", () => {
+  it("offers and persists game presets from the table drawer without replacing the active session", async () => {
+    const user = userEvent.setup();
+    render(
+      <BlackjackTable
+        config={{ ...DEFAULT_SESSION_CONFIG, presetId: "lodge-6d" }}
+        presetLabel="The Lodge Six Deck"
+        seed={DEFAULT_SESSION_CONFIG.seed}
+      />
+    );
+
+    const preset = screen.getByRole("combobox", { name: "Game preset" });
+    expect(preset).toHaveValue("lodge-6d");
+    expect(within(preset).getAllByRole("option")).toHaveLength(10);
+    expect(screen.getByRole("button", { name: "Set up game" })).toBeVisible();
+    expect(preset.closest("form")).toHaveAttribute("action", "/setup");
+
+    await user.selectOptions(preset, "ballys-north-dd");
+    expect(window.localStorage.getItem(SELECTED_GAME_STORAGE_KEY)).toBe(
+      "ballys-north-dd"
+    );
+  });
+
+  it("shows and focuses insurance between the hands", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable mode="observation" seed={14} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    const prompt = screen.getByRole("group", { name: "Insurance decision" });
+    const controls = screen.getByRole("region", { name: "Table controls" });
+    expect(prompt).toBeVisible();
+    expect(prompt).toHaveFocus();
+    expect(
+      prompt.compareDocumentPosition(controls) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it("starts with honest virtual-money labeling and requires a wager", () => {
     render(<BlackjackTable seed={785390425} />);
 
@@ -31,7 +95,7 @@ describe("BlackjackTable", () => {
     const user = userEvent.setup();
     render(<BlackjackTable seed={785390425} />);
 
-    await user.click(screen.getByRole("button", { name: "Bet $25" }));
+    await user.click(screen.getByRole("button", { name: "Bet $20" }));
     await user.click(screen.getByRole("button", { name: "Deal" }));
 
     expect(screen.getAllByTestId("player-card")).toHaveLength(2);
@@ -49,14 +113,16 @@ describe("BlackjackTable", () => {
     );
     expect(screen.getByRole("button", { name: "Hit" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Stand" })).toBeEnabled();
-    expect(screen.getByText("Cards seen").nextSibling).toHaveTextContent("3");
+    expect(screen.getByLabelText("Count snapshot")).toHaveTextContent(
+      "True count"
+    );
   });
 
   it("completes a round, announces the result, and exports its replay", async () => {
     const user = userEvent.setup();
     render(<BlackjackTable seed={785390425} />);
 
-    await user.click(screen.getByRole("button", { name: "Bet $25" }));
+    await user.click(screen.getByRole("button", { name: "Bet $20" }));
     await user.click(screen.getByRole("button", { name: "Deal" }));
     await user.click(screen.getByRole("button", { name: "Stand" }));
 
@@ -79,6 +145,86 @@ describe("BlackjackTable", () => {
     expect(document.getElementById("trueedge-replay-data")).not.toBeVisible();
   });
 
+  it("ends the current session, saves it, and opens review", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable mode="decision" seed={785390425} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await user.click(screen.getByRole("button", { name: "Stand" }));
+    expect(readAppData(window.localStorage).sessions).toHaveLength(0);
+
+    await user.click(
+      screen.getByRole("button", { name: "End session and review" })
+    );
+
+    expect(readAppData(window.localStorage).sessions[0]).toMatchObject({
+      hands: 1,
+      completionReason: "Ended by player"
+    });
+    expect(pushMock).toHaveBeenCalledWith("/review");
+  });
+
+  it("keeps the previous base wager selected for the next Deal", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable seed={785390425} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $20" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await user.click(screen.getByRole("button", { name: "Stand" }));
+
+    expect(screen.getByRole("button", { name: "Bet $20" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(screen.getByRole("button", { name: "Deal" })).toBeEnabled();
+    await user.keyboard("{Alt>}d{/Alt}");
+
+    expect(screen.getAllByTestId("player-card")).toHaveLength(2);
+    expect(
+      within(screen.getByText("Wager").parentElement!).getByText("$20")
+    ).toBeVisible();
+    expect(
+      screen.getByText("Cards dealt. Make the next decision.")
+    ).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Export replay" }));
+    const replay = JSON.parse(
+      screen.getByRole<HTMLTextAreaElement>("textbox", {
+        name: "Exported replay data"
+      }).value
+    ) as { successfulCommands: { type: string }[] };
+    expect(replay.successfulCommands.map((command) => command.type)).toEqual([
+      "place_bet",
+      "deal",
+      "stand",
+      "place_bet",
+      "deal"
+    ]);
+  });
+
+  it("shows the retained wager after an automatically settled blackjack", async () => {
+    const user = userEvent.setup();
+    render(
+      <BlackjackTable
+        mode="observation"
+        seed={findAutoSettledBlackjackSeed()}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    expect(screen.getByText("Round complete")).toBeVisible();
+    expect(screen.getByLabelText("Decision explanation")).toHaveTextContent(
+      "Deal the hand"
+    );
+    expect(screen.getByLabelText("Decision explanation")).toHaveTextContent(
+      "$5 is selected. Deal when ready."
+    );
+    expect(screen.getByRole("button", { name: "Deal" })).toBeEnabled();
+  });
+
   it("supports the documented deal and stand keyboard shortcuts", async () => {
     const user = userEvent.setup();
     render(<BlackjackTable seed={785390425} />);
@@ -95,7 +241,7 @@ describe("BlackjackTable", () => {
     render(<BlackjackTable seed={785390425} />);
 
     await user.click(screen.getByRole("button", { name: "Bet $5" }));
-    screen.getByRole("button", { name: "End at this round" }).focus();
+    screen.getByRole("button", { name: "Export replay" }).focus();
     await user.keyboard("{Alt>}d{/Alt}");
 
     expect(screen.queryAllByTestId("player-card")).toHaveLength(0);
@@ -128,6 +274,81 @@ describe("BlackjackTable", () => {
 
     expect(screen.getByLabelText("Decision explanation")).not.toHaveTextContent(
       /Correct:|You chose/u
+    );
+  });
+
+  it("shows actionable decision and wager guidance without mode chrome", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable mode="observation" seed={785390425} />);
+
+    expect(screen.queryByText("Live analysis")).not.toBeInTheDocument();
+    expect(screen.queryByText("observation mode")).not.toBeInTheDocument();
+    expect(screen.getByText("Decision guide")).toBeInTheDocument();
+    expect(screen.getByLabelText("Wager guidance")).toHaveTextContent(
+      "Move to 2 units at TC +1."
+    );
+    expect(screen.getByLabelText("Hi-Lo card values")).toHaveTextContent(
+      "+12 3 4 5 6"
+    );
+    expect(screen.getByLabelText("Hi-Lo card values")).toHaveTextContent(
+      "-110 J Q K A"
+    );
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    expect(screen.getByText("Next decision")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Stand" })).toBeVisible();
+    expect(screen.getByLabelText("Count snapshot")).toHaveTextContent(
+      "Decks left"
+    );
+    for (const removedLabel of [
+      "Raw true count",
+      "Convention",
+      "Last card to RC",
+      "Discard tray"
+    ]) {
+      expect(screen.queryByText(removedLabel)).not.toBeInTheDocument();
+    }
+  });
+
+  it("maps a positive true count to the shared unit ramp", async () => {
+    const user = userEvent.setup();
+    const config = {
+      ...DEFAULT_SESSION_CONFIG,
+      seed: 3,
+      deviationProfileId: "basic-strategy-only",
+      rules: {
+        ...DEFAULT_SESSION_CONFIG.rules,
+        decks: 1 as const
+      }
+    };
+    render(<BlackjackTable config={config} mode="observation" seed={3} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    expect(screen.getByLabelText("Wager guidance")).toHaveTextContent(
+      "Next hand: 2 units ($10)"
+    );
+    expect(screen.getByLabelText("Wager guidance")).toHaveTextContent(
+      "Move to 4 units at TC +2."
+    );
+  });
+
+  it("surfaces the insurance decision and its count trigger", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable mode="observation" seed={14} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    expect(screen.getByText("Insurance decision")).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Decline insurance" })
+    ).toBeVisible();
+    expect(screen.getByText("Index trigger").nextSibling).toHaveTextContent(
+      "TC +3"
     );
   });
 
@@ -328,9 +549,7 @@ describe("BlackjackTable", () => {
     await user.click(screen.getByRole("button", { name: "Deal" }));
     await user.click(screen.getByRole("button", { name: "Hit" }));
 
-    expect(
-      screen.getByRole("heading", { name: "Decision feedback" })
-    ).toBeVisible();
+    expect(screen.getByText("Last decision")).toBeVisible();
     expect(
       within(screen.getByLabelText("Decision feedback log")).getAllByRole(
         "listitem"

@@ -1,4 +1,47 @@
 :root {
+  color-scheme: dark;
+  --canvas: #080c12;
+  --surface: #111923;
+  --surface-raised: #182331;
+  --surface-inset: #090f17;
+  --surface-nav: #060a0f;
+  --line: #263548;
+  --line-strong: #60748d;
+  --ink: #edf4fc;
+  --ink-soft: #c6d3e1;
+  --muted: #9eafc2;
+  --signal: #65a9f3;
+  --signal-hover: #7bb8f7;
+  --signal-ink: #07111d;
+  --signal-tint: #142c49;
+  --positive: #79bd95;
+  --negative: #e08b83;
+  --negative-surface: #351f21;
+  --focus: #86c4ff;
+  --felt: #102d46;
+  --felt-line: #356483;
+  --felt-ink: #eef6fb;
+  --felt-soft: #b8cfde;
+  --felt-accent: #d3e6f2;
+  --card-surface: #f8f6ef;
+  --card-line: #cec9bb;
+  --card-ink: #1d2c30;
+  --shadow: rgb(0 0 0 / 42%);
+  --radius: 3px;
+  --sidebar: 216px;
+  --content-max: 1320px;
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-synthesis: none;
+}
+
+:root[data-theme="light"] {
   color-scheme: light;
   --canvas: #e4e9e7;
   --surface: #eef1ef;
@@ -25,19 +68,8 @@
   --felt-accent: #d5e3df;
   --card-surface: #f8f6ef;
   --card-line: #cec9bb;
+  --card-ink: #1d2c30;
   --shadow: rgb(31 58 57 / 18%);
-  --radius: 3px;
-  --sidebar: 216px;
-  --content-max: 1320px;
-  font-family:
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Display",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  font-synthesis: none;
 }
 
 * {

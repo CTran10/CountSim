@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { updateSelectedGameId } from "../../lib/gamePreference";
 import { useAppData } from "../../lib/useAppData";
 import styles from "./SessionSetupForm.module.css";
 
@@ -59,6 +60,23 @@ function intentSupported(
   return true;
 }
 
+function compatibleModeForIntent(
+  mode: TrainingModeId,
+  intent: IntentId,
+  supportsDeviations: boolean
+): TrainingModeId {
+  if (intentSupported(mode, intent, supportsDeviations)) return mode;
+  if (
+    intent === "running_count" ||
+    intent === "deck_estimation" ||
+    intent === "true_count"
+  ) {
+    return "practice";
+  }
+  if (intent === "full_game") return "play";
+  return "decision";
+}
+
 function dollarsToCents(value: string): number {
   const dollars = Number(value);
   return Number.isFinite(dollars) ? Math.round(dollars * 100) : 0;
@@ -85,6 +103,10 @@ export function SessionSetupForm({
     customGame === null ||
     (typeof customDeviationProfile === "string" &&
       customDeviationProfile !== "basic-strategy-only");
+
+  useEffect(() => {
+    updateSelectedGameId(presetId);
+  }, [presetId]);
 
   const error = useMemo(() => {
     const bankrollCents = dollarsToCents(bankroll);
@@ -265,17 +287,27 @@ export function SessionSetupForm({
 
       <fieldset className={styles.section}>
         <legend>Session intent</legend>
-        <p>The recap gives this skill more scoring weight.</p>
+        <p>
+          The recap gives this skill more weight. Choosing an intent switches to
+          a compatible training mode when needed.
+        </p>
         <div className={styles.intentGrid}>
           {INTENTS.map(([id, label]) => (
             <label className={styles.compactChoice} key={id}>
               <input
                 checked={intent === id}
-                disabled={
-                  !intentSupported(selectedMode, id, supportsDeviations)
-                }
+                disabled={id === "deviations" && !supportsDeviations}
                 name="intent"
-                onChange={() => setIntent(id)}
+                onChange={() => {
+                  setSelectedMode(
+                    compatibleModeForIntent(
+                      selectedMode,
+                      id,
+                      supportsDeviations
+                    )
+                  );
+                  setIntent(id);
+                }}
                 type="radio"
                 value={id}
               />

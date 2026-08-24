@@ -4,6 +4,12 @@ import styles from "./DrillPicker.module.css";
 
 const DRILLS = [
   {
+    id: "count-practice",
+    code: "CV",
+    title: "Count practice",
+    detail: "Value one card, finish the running count, then convert it."
+  },
+  {
     id: "running-count",
     code: "RC",
     title: "Running count",

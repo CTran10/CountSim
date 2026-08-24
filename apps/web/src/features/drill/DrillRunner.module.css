@@ -17,7 +17,8 @@
 .runner header span,
 .prompt span,
 .numberAnswer span,
-.fullFields span {
+.fullFields span,
+.countFields span {
   color: var(--muted);
   font-size: 10px;
   font-weight: 700;
@@ -77,10 +78,15 @@
   place-items: center;
   border: 1px solid var(--card-line);
   border-radius: 3px;
-  color: var(--ink);
+  color: var(--card-ink);
   background: var(--card-surface);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 15px;
+}
+
+.cardRun .focusCard {
+  outline: 3px solid var(--signal);
+  outline-offset: 2px;
 }
 
 .actionAnswers {
@@ -92,6 +98,8 @@
 
 .actionAnswers button,
 .numberAnswer button,
+.fullLoad > button,
+.countPractice > button,
 .runner footer button {
   min-height: 42px;
   border: 1px solid var(--line-strong);
@@ -102,17 +110,34 @@
   font-weight: 750;
   text-transform: capitalize;
   cursor: pointer;
+  transition:
+    border-color 150ms ease-out,
+    color 150ms ease-out,
+    background-color 150ms ease-out,
+    transform 150ms ease-out;
 }
 
 .actionAnswers button:hover:not(:disabled),
 .numberAnswer button:hover:not(:disabled),
+.fullLoad > button:hover:not(:disabled),
+.countPractice > button:hover:not(:disabled),
 .runner footer button:hover {
   border-color: var(--signal);
   color: var(--signal);
 }
 
+.actionAnswers button:active:not(:disabled),
+.numberAnswer button:active:not(:disabled),
+.fullLoad > button:active:not(:disabled),
+.countPractice > button:active:not(:disabled),
+.runner footer button:active {
+  transform: translateY(1px);
+}
+
 .actionAnswers button:disabled,
-.numberAnswer button:disabled {
+.numberAnswer button:disabled,
+.fullLoad > button:disabled,
+.countPractice > button:disabled {
   opacity: 0.58;
   cursor: not-allowed;
 }
@@ -147,18 +172,32 @@
   padding: 20px;
 }
 
+.countPractice {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
 .fullFields {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
-.fullFields label {
+.countFields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fullFields label,
+.countFields label {
   display: grid;
   gap: 7px;
 }
 
-.fullFields input {
+.fullFields input,
+.countFields input {
   width: 100%;
   min-height: 42px;
   padding: 0 11px;
@@ -193,22 +232,10 @@
   text-transform: capitalize;
 }
 
-.fullLoad > button {
+.fullLoad > button,
+.countPractice > button {
   width: fit-content;
-  min-height: 42px;
   padding: 0 15px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  color: var(--ink-soft);
-  background: var(--surface-raised);
-  font-size: 12px;
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.fullLoad > button:hover:not(:disabled) {
-  border-color: var(--signal);
-  color: var(--signal);
 }
 
 .numberAnswer button,
@@ -263,7 +290,12 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .fullLoad > button {
+  .countFields {
+    grid-template-columns: 1fr;
+  }
+
+  .fullLoad > button,
+  .countPractice > button {
     width: 100%;
   }
 }

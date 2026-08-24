@@ -3,13 +3,12 @@
 import { useSyncExternalStore } from "react";
 
 import {
+  APP_DATA_CHANGED_EVENT,
   APP_DATA_KEY,
   EMPTY_APP_DATA,
   readAppData,
   type AppData
 } from "./storage";
-
-export const APP_DATA_CHANGED_EVENT = "trueedge:local-data-changed";
 
 let cachedSerialized: string | null | undefined;
 let cachedData: AppData = EMPTY_APP_DATA;

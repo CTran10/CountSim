@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { SELECTED_GAME_STORAGE_KEY } from "../../lib/gamePreference";
 import {
   EMPTY_APP_DATA,
   saveCustomGame,
@@ -18,23 +19,38 @@ afterEach(() => {
 });
 
 describe("SessionSetupForm", () => {
-  it("only enables intents that the selected mode can score", async () => {
+  it("persists the selected game when setup opens", async () => {
+    render(
+      <SessionSetupForm presetId="ballys-north-dd" tableMinimumCents={1500} />
+    );
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(SELECTED_GAME_STORAGE_KEY)).toBe(
+        "ballys-north-dd"
+      );
+    });
+  });
+
+  it("switches to a compatible mode when an intent needs one", async () => {
     const user = userEvent.setup();
     render(<SessionSetupForm presetId="lodge-dd" tableMinimumCents={500} />);
 
     expect(screen.getByRole("radio", { name: "Observation" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Discipline" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Running count" })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: "Full game" })).toBeDisabled();
-
-    await user.click(screen.getByRole("radio", { name: "Practice" }));
     expect(screen.getByRole("radio", { name: "Running count" })).toBeEnabled();
+    expect(screen.getByRole("radio", { name: "Full game" })).toBeEnabled();
+
     await user.click(screen.getByRole("radio", { name: "Running count" }));
     expect(screen.getByRole("radio", { name: "Running count" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Practice" })).toBeChecked();
 
     await user.click(screen.getByRole("radio", { name: "Decision" }));
-    expect(screen.getByRole("radio", { name: "Running count" })).toBeDisabled();
     expect(screen.getByRole("radio", { name: "Full game" })).toBeChecked();
+
+    await user.click(screen.getByRole("radio", { name: "Observation" }));
+    await user.click(screen.getByRole("radio", { name: "Basic strategy" }));
+    expect(screen.getByRole("radio", { name: "Basic strategy" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Decision" })).toBeChecked();
   });
 
   it("disables deviation intent for a basic-strategy-only custom game", async () => {

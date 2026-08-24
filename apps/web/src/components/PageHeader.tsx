@@ -8,17 +8,17 @@ export function PageHeader({
   summary,
   actions
 }: {
-  readonly eyebrow: string;
+  readonly eyebrow?: string;
   readonly title: string;
-  readonly summary: string;
+  readonly summary?: string;
   readonly actions?: ReactNode;
 }) {
   return (
     <header className={styles.pageHeader}>
       <div>
-        <p>{eyebrow}</p>
+        {eyebrow === undefined ? null : <p>{eyebrow}</p>}
         <h1>{title}</h1>
-        <span>{summary}</span>
+        {summary === undefined ? null : <span>{summary}</span>}
       </div>
       {actions === undefined ? null : (
         <div className={styles.headerActions}>{actions}</div>
@@ -40,7 +40,7 @@ export function SkillBar({
     <div className={styles.skillRow}>
       <div>
         <strong>{label}</strong>
-        <span>{detail}</span>
+        {detail === undefined ? null : <span>{detail}</span>}
       </div>
       <progress aria-label={`${label} mastery`} max={100} value={value} />
       <b>{value}%</b>

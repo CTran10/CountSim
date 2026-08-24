@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageHeader } from "../../components/PageHeader";
 import { SessionSetupForm } from "../../features/setup/SessionSetupForm";
+import { catalogTableMinimumCents } from "../../lib/catalogPreset";
 
 export const metadata: Metadata = { title: "Session setup | TrueEdge" };
 
@@ -12,11 +13,7 @@ export default async function SetupPage({
 }) {
   const query = await searchParams;
   const presetId = typeof query.preset === "string" ? query.preset : "lodge-6d";
-  const preset = getPreset(presetId);
-  const tableMinimumCents =
-    preset?.provenance.currentPostedLimits?.minimumCents ??
-    preset?.historicalLimits.minimumCents ??
-    500;
+  const tableMinimumCents = catalogTableMinimumCents(presetId) ?? 500;
 
   return (
     <>
@@ -32,4 +29,3 @@ export default async function SetupPage({
     </>
   );
 }
-import { getPreset } from "@trueedge/casino-catalog";

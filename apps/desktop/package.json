@@ -1,6 +1,6 @@
 {
   "name": "@trueedge/desktop",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Offline Electron host for the TrueEdge blackjack training lab",
   "author": "TrueEdge",
@@ -15,6 +15,9 @@
     "dist:mac": "pnpm run build:web && electron-builder --mac dmg zip --arm64 --x64 --publish never",
     "test": "vitest run test",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
   },
   "devDependencies": {
     "electron": "43.4.1",
@@ -43,10 +46,18 @@
         ]
       }
     ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CTran10",
+        "repo": "CountSim"
+      }
+    ],
     "mac": {
       "category": "public.app-category.education",
       "icon": "build/icon.png",
-      "sign": null,
+      "hardenedRuntime": true,
+      "notarize": true,
       "target": [
         "dmg",
         "zip"

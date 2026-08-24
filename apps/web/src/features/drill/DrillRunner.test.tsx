@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { readAppData } from "../../lib/storage";
-import { DrillRunner } from "./DrillRunner";
+import { buildCountPracticeScenario, DrillRunner } from "./DrillRunner";
 
 afterEach(() => {
   cleanup();
@@ -15,6 +15,44 @@ afterEach(() => {
 });
 
 describe("DrillRunner", () => {
+  it("scores card value, running count, and true count together", async () => {
+    const user = userEvent.setup();
+    const scenario = buildCountPracticeScenario(12_041);
+    render(<DrillRunner kind="count-practice" />);
+
+    expect(
+      screen.getByLabelText(
+        `Outlined card: ${scenario.cards[scenario.focusIndex]}`
+      )
+    ).toBeVisible();
+    await user.type(
+      screen.getByRole("textbox", { name: "Outlined card value" }),
+      String(scenario.cardValue)
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Final running count" }),
+      String(scenario.runningCount)
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Truncated true count" }),
+      String(scenario.trueCount)
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Score count practice" })
+    );
+
+    expect(screen.getByText(/3\/3 correct\./u)).toBeVisible();
+    const attempts = readAppData(window.localStorage).drillAttempts;
+    expect(attempts).toHaveLength(3);
+    expect(
+      attempts.filter((attempt) => attempt.skill === "running_count")
+    ).toHaveLength(2);
+    expect(
+      attempts.filter((attempt) => attempt.skill === "true_count")
+    ).toHaveLength(1);
+    expect(attempts.every((attempt) => attempt.correct)).toBe(true);
+  });
+
   it("trains insurance separately and retains repeated deterministic attempts", async () => {
     const user = userEvent.setup();
     render(<DrillRunner kind="insurance" />);

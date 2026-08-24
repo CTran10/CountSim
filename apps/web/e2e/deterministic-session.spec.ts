@@ -9,9 +9,9 @@ async function waitForTable(page: Page): Promise<void> {
   );
 }
 
-async function dealTwentyFive(page: Page): Promise<string[]> {
+async function dealTwenty(page: Page): Promise<string[]> {
   await waitForTable(page);
-  await page.getByRole("button", { name: "Bet $25", exact: true }).click();
+  await page.getByRole("button", { name: "Bet $20", exact: true }).click();
   await page.getByRole("button", { name: "Deal", exact: true }).click();
   await expect(page.getByTestId("player-card")).toHaveCount(2);
   await expect(page.getByTestId("dealer-hole-card")).toBeVisible();
@@ -31,10 +31,10 @@ test("reproduces a visible hand and versioned replay from the same seed", async 
   page
 }) => {
   await page.goto(SEEDED_ROUTE);
-  const firstHand = await dealTwentyFive(page);
+  const firstHand = await dealTwenty(page);
 
   await page.reload();
-  expect(await dealTwentyFive(page)).toEqual(firstHand);
+  expect(await dealTwenty(page)).toEqual(firstHand);
   await page.getByRole("button", { name: "Stand", exact: true }).click();
   await expect(page.getByText("Round complete")).toBeVisible();
 
@@ -55,6 +55,15 @@ test("reproduces a visible hand and versioned replay from the same seed", async 
     "stand"
   ]);
   await expect(page.getByText("Replay position 3 of 3")).toBeVisible();
+
+  await expect(
+    page.getByRole("button", { name: "Bet $20", exact: true })
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Deal", exact: true }).click();
+  await expect(page.getByTestId("player-card")).toHaveCount(2);
+  await expect(
+    page.getByText("Cards dealt. Make the next decision.")
+  ).toBeVisible();
 });
 
 test("supports keyboard play and has no horizontal overflow", async ({
@@ -66,14 +75,14 @@ test("supports keyboard play and has no horizontal overflow", async ({
     page.getByText("Virtual funds only.", { exact: false })
   ).toBeVisible();
 
-  const rail = page.locator("details").filter({ hasText: "Training rail" });
+  const rail = page.locator("details").filter({ hasText: "Decision guide" });
   if (testInfo.project.name === "mobile-390") {
     await expect(rail).not.toHaveAttribute("open", "");
     await rail.locator("summary").click();
   } else {
     await expect(rail).toHaveAttribute("open", "");
   }
-  await expect(page.getByText("Running count", { exact: true })).toBeVisible();
+  await expect(page.getByText("True count", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Bet $5", exact: true }).click();
   await page.keyboard.press("Alt+D");
@@ -130,9 +139,26 @@ test("exposes deterministic split, insurance, and double fixtures", async ({
   await waitForTable(page);
   await page.getByRole("button", { name: "Bet $5", exact: true }).click();
   await page.getByRole("button", { name: "Deal", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Take insurance" })
-  ).toBeVisible();
+  const insurance = page.getByRole("group", { name: "Insurance decision" });
+  await expect(insurance).toBeVisible();
+  await expect(insurance).toBeFocused();
+  await expect
+    .poll(() =>
+      insurance.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const obstructionBottom = [...document.querySelectorAll("header")]
+          .filter((header) => getComputedStyle(header).display !== "none")
+          .reduce(
+            (bottom, header) =>
+              Math.max(bottom, header.getBoundingClientRect().bottom),
+            0
+          );
+        return (
+          rect.top >= obstructionBottom && rect.bottom <= window.innerHeight
+        );
+      })
+    )
+    .toBe(true);
   await page.getByRole("button", { name: "Decline" }).click();
 
   await page.goto("/play?seed=0&mode=decision");

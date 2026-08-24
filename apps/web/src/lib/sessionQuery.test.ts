@@ -93,6 +93,7 @@ describe("parseSessionQuery", () => {
     const parsed = parseSessionQuery({ preset: "lodge-dd" });
     expect(parsed.config.rules.doubleAfterSplit).toBe(false);
     expect(parsed.config.deviationProfileId).toBe("hilo-dd-h17-no-das");
+    expect(parsed.tableMinimumCents).toBe(2500);
   });
 
   it("falls back safely when a custom payload is malformed", () => {

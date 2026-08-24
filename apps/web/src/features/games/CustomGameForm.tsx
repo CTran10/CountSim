@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import {
   readBrowserAppData,
@@ -9,20 +8,31 @@ import {
   writeBrowserAppData,
   type StoredCustomGame
 } from "../../lib/storage";
-import { useAppData } from "../../lib/useAppData";
 import styles from "./CustomGameForm.module.css";
 
-export function CustomGameForm() {
-  const [status, setStatus] = useState("");
-  const savedGames = useAppData().customGames;
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const focusAfterDelete = useRef(false);
+function initialRule(
+  game: StoredCustomGame | undefined,
+  key: string,
+  fallback: string | number | boolean
+): string | number | boolean {
+  return game?.rules[key] ?? fallback;
+}
 
-  useEffect(() => {
-    if (!focusAfterDelete.current) return;
-    focusAfterDelete.current = false;
-    headingRef.current?.focus();
-  }, [savedGames]);
+export function CustomGameForm({
+  initialGame,
+  deletable = false,
+  submitLabel = "Save custom game",
+  onDeleted,
+  onSaved
+}: {
+  readonly initialGame?: StoredCustomGame;
+  readonly deletable?: boolean;
+  readonly submitLabel?: string;
+  readonly onDeleted?: () => void;
+  readonly onSaved?: (gameId: string) => void;
+}) {
+  const [status, setStatus] = useState("");
+  const initialPenetration = initialGame?.penetration;
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,13 +98,15 @@ export function CustomGameForm() {
       );
       return;
     }
-    const id = `custom-${
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/gu, "-")
-        .replace(/^-|-$/gu, "")
-        .slice(0, 48) || "game"
-    }`;
+    const id =
+      initialGame?.id ??
+      `custom-user-${
+        name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/gu, "-")
+          .replace(/^-|-$/gu, "")
+          .slice(0, 48) || "game"
+      }`;
     const current = readBrowserAppData();
     const penetration: StoredCustomGame["penetration"] =
       penetrationMode === "range"
@@ -135,51 +147,50 @@ export function CustomGameForm() {
     }
     if (writeBrowserAppData(next)) {
       setStatus(`Saved ${name} in this browser.`);
+      onSaved?.(id);
     } else {
       setStatus("The game could not be saved in browser storage.");
     }
   }
 
-  function deleteGame(id: string) {
+  function deleteGame() {
+    if (initialGame === undefined) return;
     const current = readBrowserAppData();
     const next = {
       ...current,
-      customGames: current.customGames.filter((game) => game.id !== id)
+      customGames: current.customGames.filter(
+        (game) => game.id !== initialGame.id
+      )
     };
     if (writeBrowserAppData(next)) {
-      focusAfterDelete.current = true;
       setStatus("Custom game deleted.");
+      onDeleted?.();
     } else {
       setStatus("The custom game could not be deleted.");
     }
   }
 
   return (
-    <section className={styles.custom} aria-labelledby="custom-heading">
-      <div className={styles.heading}>
-        <div>
-          <span>Local ruleset</span>
-          <h2 id="custom-heading" ref={headingRef} tabIndex={-1}>
-            Build a custom game
-          </h2>
-        </div>
-        <p>
-          Saved only in this browser. Casino names do not enter engine logic.
-        </p>
-      </div>
+    <section
+      aria-label={initialGame === undefined ? "Add game" : "Edit game"}
+      className={styles.custom}
+    >
       <form onSubmit={handleSubmit}>
         <label className={styles.wideField}>
           <span>Game name</span>
           <input
+            defaultValue={initialGame?.name ?? ""}
             maxLength={80}
             name="name"
-            placeholder="Casino game I saw tonight"
             required
           />
         </label>
         <label>
           <span>Decks</span>
-          <select defaultValue="6" name="decks">
+          <select
+            defaultValue={String(initialRule(initialGame, "decks", 6))}
+            name="decks"
+          >
             {[1, 2, 4, 6, 8].map((decks) => (
               <option key={decks} value={decks}>
                 {decks}
@@ -189,21 +200,36 @@ export function CustomGameForm() {
         </label>
         <label>
           <span>Blackjack</span>
-          <select defaultValue="3:2" name="payout">
+          <select
+            defaultValue={String(
+              initialRule(initialGame, "blackjackPayout", "3:2")
+            )}
+            name="payout"
+          >
             <option value="3:2">3:2</option>
             <option value="6:5">6:5</option>
           </select>
         </label>
         <label>
           <span>Dealer soft 17</span>
-          <select defaultValue="H17" name="soft17">
+          <select
+            defaultValue={String(
+              initialRule(initialGame, "dealerSoft17", "H17")
+            )}
+            name="soft17"
+          >
             <option value="H17">H17</option>
             <option value="S17">S17</option>
           </select>
         </label>
         <label>
           <span>Double rule</span>
-          <select defaultValue="any_two" name="doubleRule">
+          <select
+            defaultValue={String(
+              initialRule(initialGame, "doubleRule", "any_two")
+            )}
+            name="doubleRule"
+          >
             <option value="any_two">Any two</option>
             <option value="9_10_11">9, 10, or 11</option>
             <option value="10_11">10 or 11</option>
@@ -211,7 +237,10 @@ export function CustomGameForm() {
         </label>
         <label>
           <span>Surrender</span>
-          <select defaultValue="none" name="surrender">
+          <select
+            defaultValue={String(initialRule(initialGame, "surrender", "none"))}
+            name="surrender"
+          >
             <option value="none">None</option>
             <option value="late">Late</option>
             <option value="early">Early</option>
@@ -219,7 +248,10 @@ export function CustomGameForm() {
         </label>
         <label>
           <span>Maximum hands</span>
-          <select defaultValue="4" name="maxHands">
+          <select
+            defaultValue={String(initialRule(initialGame, "maxSplitHands", 4))}
+            name="maxHands"
+          >
             <option value="2">2</option>
             <option value="3">3</option>
             <option value="4">4</option>
@@ -227,7 +259,10 @@ export function CustomGameForm() {
         </label>
         <label>
           <span>Penetration model</span>
-          <select defaultValue="fixed" name="penetrationMode">
+          <select
+            defaultValue={initialPenetration?.mode ?? "fixed"}
+            name="penetrationMode"
+          >
             <option value="fixed">Fixed</option>
             <option value="range">Realistic range</option>
             <option value="observed_distribution">Observed values</option>
@@ -237,7 +272,11 @@ export function CustomGameForm() {
           <span>Fixed penetration</span>
           <div className={styles.suffixedInput}>
             <input
-              defaultValue="75"
+              defaultValue={
+                initialPenetration?.mode === "fixed"
+                  ? Math.round(initialPenetration.value * 100)
+                  : 75
+              }
               max="94"
               min="41"
               name="penetration"
@@ -251,7 +290,11 @@ export function CustomGameForm() {
           <span>Range minimum</span>
           <div className={styles.suffixedInput}>
             <input
-              defaultValue="70"
+              defaultValue={
+                initialPenetration?.mode === "range"
+                  ? Math.round(initialPenetration.minimum * 100)
+                  : 70
+              }
               max="94"
               min="41"
               name="minimumPenetration"
@@ -264,7 +307,11 @@ export function CustomGameForm() {
           <span>Range maximum</span>
           <div className={styles.suffixedInput}>
             <input
-              defaultValue="80"
+              defaultValue={
+                initialPenetration?.mode === "range"
+                  ? Math.round(initialPenetration.maximum * 100)
+                  : 80
+              }
               max="94"
               min="41"
               name="maximumPenetration"
@@ -276,14 +323,23 @@ export function CustomGameForm() {
         <label className={styles.wideField}>
           <span>Observed penetration values</span>
           <input
-            defaultValue="72, 76, 74, 68, 77, 73"
+            defaultValue={
+              initialPenetration?.mode === "observed_distribution"
+                ? initialPenetration.values
+                    .map((value) => Math.round(value * 100))
+                    .join(", ")
+                : "72, 76, 74, 68, 77, 73"
+            }
             maxLength={320}
             name="observations"
           />
         </label>
         <label>
           <span>Shuffle behavior</span>
-          <select defaultValue="perfect_random" name="shuffle">
+          <select
+            defaultValue={initialGame?.shuffle ?? "perfect_random"}
+            name="shuffle"
+          >
             <option value="perfect_random">Perfect random</option>
             <option value="automatic">Automatic shuffle</option>
             <option value="simulated_hand">Simulated hand shuffle</option>
@@ -292,7 +348,16 @@ export function CustomGameForm() {
         </label>
         <label>
           <span>Hi-Lo deviation profile</span>
-          <select defaultValue="hilo-6d-h17-das-rsa" name="deviationProfile">
+          <select
+            defaultValue={String(
+              initialRule(
+                initialGame,
+                "deviationProfile",
+                "hilo-6d-h17-das-rsa"
+              )
+            )}
+            name="deviationProfile"
+          >
             <option value="basic-strategy-only">Basic strategy only</option>
             <option value="hilo-dd-h17-no-das">Double deck H17 · no DAS</option>
             <option value="hilo-dd-h17-das">Double deck H17 · DAS</option>
@@ -310,49 +375,80 @@ export function CustomGameForm() {
         <fieldset className={styles.toggles}>
           <legend>Player options</legend>
           <label>
-            <input defaultChecked name="das" type="checkbox" /> DAS
+            <input
+              defaultChecked={Boolean(
+                initialRule(initialGame, "doubleAfterSplit", true)
+              )}
+              name="das"
+              type="checkbox"
+            />{" "}
+            DAS
           </label>
           <label>
-            <input defaultChecked name="rsa" type="checkbox" /> Resplit aces
+            <input
+              defaultChecked={Boolean(
+                initialRule(initialGame, "resplitAces", true)
+              )}
+              name="rsa"
+              type="checkbox"
+            />{" "}
+            Resplit aces
           </label>
           <label>
-            <input name="hsa" type="checkbox" /> Hit split aces
+            <input
+              defaultChecked={Boolean(
+                initialRule(initialGame, "hitSplitAces", false)
+              )}
+              name="hsa"
+              type="checkbox"
+            />{" "}
+            Hit split aces
           </label>
           <label>
-            <input name="dsa" type="checkbox" /> Double split aces
+            <input
+              defaultChecked={Boolean(
+                initialRule(initialGame, "doubleSplitAces", false)
+              )}
+              name="dsa"
+              type="checkbox"
+            />{" "}
+            Double split aces
           </label>
           <label>
-            <input defaultChecked name="peek" type="checkbox" /> Dealer peek
+            <input
+              defaultChecked={Boolean(
+                initialRule(initialGame, "dealerPeek", true)
+              )}
+              name="peek"
+              type="checkbox"
+            />{" "}
+            Dealer peek
           </label>
           <label>
-            <input name="burn" type="checkbox" /> Burn card
+            <input
+              defaultChecked={Boolean(
+                initialRule(initialGame, "burnCard", false)
+              )}
+              name="burn"
+              type="checkbox"
+            />{" "}
+            Burn card
           </label>
         </fieldset>
         <div className={styles.formFooter}>
           <p aria-live="polite">{status}</p>
-          <button type="submit">Save custom game</button>
+          {!deletable || initialGame === undefined ? null : (
+            <button
+              className={styles.deleteButton}
+              onClick={deleteGame}
+              type="button"
+            >
+              Delete game
+            </button>
+          )}
+          <button type="submit">{submitLabel}</button>
         </div>
       </form>
-      {savedGames.length === 0 ? null : (
-        <div className={styles.savedGames}>
-          <h3>Saved games</h3>
-          {savedGames.map((game) => (
-            <div key={game.id}>
-              <span>{game.name}</span>
-              <small>
-                {String(game.rules.decks)}D · {String(game.rules.dealerSoft17)}{" "}
-                · {game.shuffle.replaceAll("_", " ")}
-              </small>
-              <Link href={`/setup?preset=${encodeURIComponent(game.id)}`}>
-                Use
-              </Link>
-              <button onClick={() => deleteGame(game.id)} type="button">
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
     </section>
   );
 }

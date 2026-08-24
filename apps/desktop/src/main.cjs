@@ -8,6 +8,7 @@ const {
   shell,
   utilityProcess
 } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const {
   LOCAL_SERVER_PORT,
   isAllowedExternalUrl,
@@ -15,6 +16,7 @@ const {
   isRuntimeResponse,
   resolveServerEntry
 } = require("./runtime.cjs");
+const { startAutomaticUpdates } = require("./updater.cjs");
 
 const SERVER_START_TIMEOUT_MS = 20_000;
 let appOrigin = "";
@@ -167,6 +169,11 @@ if (!hasSingleInstanceLock) {
     .then(async () => {
       await startLocalServer();
       createWindow();
+      startAutomaticUpdates({
+        autoUpdater,
+        isPackaged: app.isPackaged,
+        platform: process.platform
+      });
     })
     .catch((error) => {
       dialog.showErrorBox(

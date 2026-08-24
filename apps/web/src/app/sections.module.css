@@ -38,6 +38,7 @@
 }
 
 .homeGrid {
+  align-items: start;
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.8fr);
@@ -77,15 +78,17 @@
 }
 
 .continueBlock {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 18px;
 }
 
-.continueBlock > p {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 0;
+.continueBlock .panelHeader {
+  margin-bottom: 0;
+}
+
+.continueBlock > .actionLink {
+  margin-top: auto;
 }
 
 .nextSession {
@@ -95,49 +98,8 @@
   padding: 2px 0 2px 14px;
 }
 
-.nextSession span {
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .nextSession strong {
   font-size: 18px;
-}
-
-.nextSession small {
-  color: var(--ink-soft);
-  line-height: 1.45;
-}
-
-.definitionGrid {
-  display: grid;
-  gap: 1px;
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 18px;
-}
-
-.definitionGrid div {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  min-height: 92px;
-  padding: 16px;
-}
-
-.definitionGrid span {
-  color: var(--signal);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.definitionGrid p {
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.5;
-  margin: 8px 0 0;
 }
 
 .emptyState {
@@ -172,10 +134,6 @@
 }
 
 @media (max-width: 640px) {
-  .definitionGrid {
-    grid-template-columns: 1fr;
-  }
-
   .panel,
   .quietPanel {
     padding: 16px;
