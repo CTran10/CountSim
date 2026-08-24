@@ -70,8 +70,8 @@
   gap: 14px;
   padding: 54px 38px 34px;
   overflow: hidden;
-  background: #123d30;
-  border-bottom: 1px solid #285849;
+  background: var(--felt);
+  border-bottom: 1px solid var(--felt-line);
 }
 
 .tableRules {
@@ -81,7 +81,7 @@
   right: 22px;
   display: flex;
   justify-content: space-between;
-  color: #b8c9c0;
+  color: var(--felt-soft);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -96,7 +96,7 @@
 }
 
 .activeHand {
-  border-color: color-mix(in srgb, var(--signal) 65%, transparent);
+  border-color: var(--felt-accent);
 }
 
 .handHeading {
@@ -104,12 +104,12 @@
   align-items: end;
   justify-content: space-between;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgb(234 241 232 / 20%);
+  border-bottom: 1px solid color-mix(in srgb, var(--felt-ink) 24%, transparent);
 }
 
 .handHeading h2 {
   margin: 0;
-  color: #d0ddd5;
+  color: var(--felt-soft);
 }
 
 .handHeading > div {
@@ -119,14 +119,14 @@
 }
 
 .handHeading small {
-  color: #d7dfd8;
+  color: var(--felt-soft);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .handHeading strong {
-  color: #fffef8;
+  color: var(--felt-ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 20px;
 }
@@ -153,10 +153,10 @@
   flex: 0 0 auto;
   margin-left: -16px;
   overflow: hidden;
-  border: 1px solid #d4cec1;
+  border: 1px solid var(--card-line);
   border-radius: 5px;
-  background: #f8f4ea;
-  box-shadow: 0 7px 14px rgb(2 14 10 / 30%);
+  background: var(--card-surface);
+  box-shadow: 0 7px 14px var(--shadow);
 }
 
 .dealerCard {
@@ -203,7 +203,7 @@
 .emptyHand span {
   width: 88px;
   height: 126px;
-  border: 1px dashed rgb(230 239 229 / 24%);
+  border: 1px dashed color-mix(in srgb, var(--felt-ink) 28%, transparent);
   border-radius: 5px;
 }
 
@@ -213,16 +213,16 @@
   padding: 10px;
   display: grid;
   gap: 4px;
-  border: 1px solid rgb(227 161 58 / 58%);
+  border: 1px solid color-mix(in srgb, var(--felt-accent) 58%, transparent);
   text-align: center;
 }
 
 .wagerMarker span {
-  color: #adb7ac;
+  color: var(--felt-soft);
 }
 
 .wagerMarker strong {
-  color: #f2d193;
+  color: var(--felt-accent);
   font-size: 14px;
 }
 
@@ -293,13 +293,13 @@
   grid-template-columns: minmax(130px, 0.25fr) minmax(0, 1fr);
   gap: 14px;
   padding: 11px 13px;
-  border: 1px solid rgb(209 99 75 / 55%);
+  border: 1px solid color-mix(in srgb, var(--negative) 45%, var(--line));
   border-left: 3px solid var(--negative);
-  background: #1a1311;
+  background: var(--negative-surface);
 }
 
 .strategyNotice strong {
-  color: #f0a38f;
+  color: var(--negative);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -330,7 +330,7 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   color: var(--ink-soft);
-  background: #1a201b;
+  background: var(--surface-raised);
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -342,7 +342,7 @@
 .practicePanel button:hover:not(:disabled),
 .sessionTools button:hover:not(:disabled),
 .sessionTools summary:hover {
-  border-color: #5c685a;
+  border-color: var(--signal);
   color: var(--ink);
 }
 
@@ -350,8 +350,9 @@
 .playActions button:disabled,
 .insurancePrompt button:disabled,
 .sessionTools button:disabled {
-  color: #646b63;
+  color: var(--muted);
   cursor: not-allowed;
+  opacity: 0.68;
 }
 
 .betActions button[aria-pressed="true"] {
@@ -368,6 +369,12 @@
   border-color: var(--signal);
   color: var(--signal-ink);
   background: var(--signal);
+}
+
+.playActions .dealButton:disabled {
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+  color: var(--muted);
 }
 
 .playActions kbd {
@@ -393,7 +400,7 @@
 .trainingRail {
   min-width: 0;
   border-left: 1px solid var(--line);
-  background: #0f130f;
+  background: var(--surface-inset);
 }
 
 .trainingRail > summary {
@@ -625,7 +632,7 @@
   gap: 10px;
   padding: 15px;
   border: 1px solid var(--line-strong);
-  background: #0e120f;
+  background: var(--surface-raised);
 }
 
 .sessionTools label {
@@ -643,7 +650,7 @@
   margin-top: 8px;
   padding: 12px;
   border: 1px solid var(--line);
-  background: #090c0a;
+  background: var(--surface);
   font:
     10px/1.5 ui-monospace,
     SFMono-Regular,

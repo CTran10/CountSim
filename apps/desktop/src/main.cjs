@@ -107,7 +107,7 @@ function openExternal(candidate) {
 function createWindow() {
   const window = new BrowserWindow({
     autoHideMenuBar: process.platform !== "darwin",
-    backgroundColor: "#0e120f",
+    backgroundColor: "#e4e9e7",
     height: 900,
     minHeight: 680,
     minWidth: 960,

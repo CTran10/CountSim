@@ -203,8 +203,8 @@
 }
 
 .tableContext {
-  background: #101712;
-  border: 1px solid #344237;
+  background: var(--felt-line);
+  border: 1px solid var(--felt-line);
   display: grid;
   gap: 1px;
   grid-template-columns: 1fr 1fr;
@@ -212,7 +212,7 @@
 }
 
 .tableContext section {
-  background: #121a14;
+  background: var(--felt);
   display: grid;
   gap: 11px;
   min-height: 108px;
@@ -221,10 +221,17 @@
 
 .tableContext section > span,
 .scoredDecision > span {
-  color: var(--muted);
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.tableContext section > span {
+  color: var(--felt-soft);
+}
+
+.scoredDecision > span {
+  color: var(--muted);
 }
 
 .cards {
@@ -235,10 +242,10 @@
 
 .cards b {
   align-items: center;
-  background: #eee9dd;
-  border: 1px solid #fff9eb;
+  background: var(--card-surface);
+  border: 1px solid var(--card-line);
   border-radius: 2px;
-  color: #181a17;
+  color: var(--ink);
   display: inline-flex;
   font:
     800 13px/1 ui-monospace,

@@ -18,7 +18,7 @@
 }
 
 .actionLink:hover {
-  background: #efb24e;
+  background: var(--signal-hover);
 }
 
 .secondaryLink {

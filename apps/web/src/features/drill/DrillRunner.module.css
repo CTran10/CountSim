@@ -25,6 +25,10 @@
   text-transform: uppercase;
 }
 
+.prompt span {
+  color: var(--felt-soft);
+}
+
 .runner h2 {
   margin: 5px 0 0;
   font-size: 18px;
@@ -45,13 +49,13 @@
   align-content: center;
   gap: 10px;
   padding: 28px 20px;
-  background: #0f241c;
+  background: color-mix(in srgb, var(--felt) 82%, var(--ink));
 }
 
 .prompt p {
   max-width: 680px;
   margin: 0;
-  color: #edf2e9;
+  color: var(--felt-ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(20px, 3vw, 30px);
   line-height: 1.3;
@@ -62,8 +66,8 @@
   flex-wrap: wrap;
   gap: 7px;
   padding: 20px;
-  border-top: 1px solid #285849;
-  background: #123d30;
+  border-top: 1px solid var(--felt-line);
+  background: var(--felt);
 }
 
 .cardRun b {
@@ -71,10 +75,10 @@
   height: 70px;
   display: grid;
   place-items: center;
-  border: 1px solid #cbc5b8;
+  border: 1px solid var(--card-line);
   border-radius: 3px;
-  color: #161814;
-  background: #f2eee4;
+  color: var(--ink);
+  background: var(--card-surface);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 15px;
 }

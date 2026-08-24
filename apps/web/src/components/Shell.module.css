@@ -18,7 +18,7 @@
 }
 
 .sidebar {
-  background: #0a0d0b;
+  background: var(--surface-nav);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -135,7 +135,7 @@
   }
 
   .mobileHeader {
-    background: #0a0d0b;
+    background: var(--surface-nav);
     border-bottom: 1px solid var(--line);
     display: block;
     left: 0;

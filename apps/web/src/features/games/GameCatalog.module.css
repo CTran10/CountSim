@@ -4,8 +4,8 @@
 }
 
 .notice {
-  background: #181810;
-  border: 1px solid #504427;
+  background: var(--signal-tint);
+  border: 1px solid color-mix(in srgb, var(--signal) 40%, var(--line));
   display: grid;
   gap: 6px;
   grid-template-columns: 190px 1fr;
@@ -196,7 +196,7 @@
 }
 
 .evidence {
-  background: #0b0e0c;
+  background: var(--surface-raised);
   border: 1px solid var(--line-strong);
   margin-top: 4px;
   min-width: 0;
