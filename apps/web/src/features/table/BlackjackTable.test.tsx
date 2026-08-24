@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   DEFAULT_SESSION_CONFIG,
@@ -366,6 +373,21 @@ describe("BlackjackTable", () => {
     expect(screen.getAllByTestId("player-card")).toHaveLength(2);
     await user.keyboard("{Alt>}s{/Alt}");
     expect(screen.getByText("Round complete")).toBeInTheDocument();
+  });
+
+  it("handles macOS Option shortcuts by their physical key code", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable seed={785390425} />);
+
+    const wager = screen.getByRole("button", { name: "Bet $5" });
+    await user.click(wager);
+    fireEvent.keyDown(wager, {
+      altKey: true,
+      code: "KeyD",
+      key: "∂"
+    });
+
+    expect(screen.getAllByTestId("player-card")).toHaveLength(2);
   });
 
   it("scopes shortcuts to the table controls", async () => {

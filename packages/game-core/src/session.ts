@@ -1122,9 +1122,6 @@ function handleDouble(state: SessionState): CommandResult | SessionDraft {
   if (hand.wagerCents > availableCash(state)) {
     return reject(state, "The virtual bankroll cannot cover the double.");
   }
-  if (hand.wagerCents * 2 > state.config.limits.maxBetCents) {
-    return reject(state, "The double would exceed the locked maximum bet.");
-  }
   const draft = cloneState(state);
   const card = takeCard(draft, "player");
   const round = draft.round!;
@@ -1755,8 +1752,7 @@ export function selectTableView(state: SessionState): TableView {
         state.config.rules,
         round.playerHands.length
       ) &&
-      currentHand.wagerCents <= availableCash(state) &&
-      currentHand.wagerCents * 2 <= state.config.limits.maxBetCents,
+      currentHand.wagerCents <= availableCash(state),
     canSplit:
       state.phase === "player" &&
       currentHand !== null &&

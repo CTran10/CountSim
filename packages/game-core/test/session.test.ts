@@ -586,7 +586,7 @@ describe("deterministic session", () => {
     expect(selectTableView(state).canHit).toBe(false);
   });
 
-  it("enforces the locked maximum bet on double exposure", () => {
+  it("allows doubling an opening wager at the locked maximum bet", () => {
     const seed = findSeed((ranks) => {
       const total = rankValue(ranks[0]!) + rankValue(ranks[2]!);
       return total === 10 || total === 11;
@@ -598,11 +598,12 @@ describe("deterministic session", () => {
     });
     state = accept(state, { type: "place_bet", amountCents: 1_000 });
     state = accept(state, { type: "deal" });
-    const rejected = applyCommand(state, { type: "double" });
+    expect(selectTableView(state).canDouble).toBe(true);
 
-    expect(rejected.ok).toBe(false);
-    expect(rejected.error).toContain("maximum bet");
-    expect(rejected.state).toBe(state);
+    const doubled = applyCommand(state, { type: "double" });
+
+    expect(doubled.ok).toBe(true);
+    expect(doubled.state.round?.playerHands[0]?.wagerCents).toBe(2_000);
   });
 
   it("allows splitting distinct ten-value ranks", () => {

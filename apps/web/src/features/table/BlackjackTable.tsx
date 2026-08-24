@@ -535,14 +535,14 @@ export function BlackjackTable({
       ) {
         return;
       }
-      const key = event.key.toLowerCase();
+      const key = event.code;
       let handled = true;
-      if (key === "d" && canDealSelectedWager) dealSelectedWager();
-      else if (key === "h" && view.canHit) performAction("hit");
-      else if (key === "s" && view.canStand) performAction("stand");
-      else if (key === "x" && view.canDouble) performAction("double");
-      else if (key === "p" && view.canSplit) performAction("split");
-      else if (key === "r" && view.canSurrender) performAction("surrender");
+      if (key === "KeyD" && canDealSelectedWager) dealSelectedWager();
+      else if (key === "KeyH" && view.canHit) performAction("hit");
+      else if (key === "KeyS" && view.canStand) performAction("stand");
+      else if (key === "KeyX" && view.canDouble) performAction("double");
+      else if (key === "KeyP" && view.canSplit) performAction("split");
+      else if (key === "KeyR" && view.canSurrender) performAction("surrender");
       else handled = false;
       if (handled) {
         event.preventDefault();
