@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import { PageHeader } from "../../components/PageHeader";
 import { SessionSetupForm } from "../../features/setup/SessionSetupForm";
 import { catalogTableMinimumCents } from "../../lib/catalogPreset";
+import { generateSessionSeed } from "../../lib/seed";
 
 export const metadata: Metadata = { title: "Session setup | TrueEdge" };
+export const dynamic = "force-dynamic";
 
 export default async function SetupPage({
   searchParams
@@ -23,6 +25,7 @@ export default async function SetupPage({
         title="Define the session before variance does."
       />
       <SessionSetupForm
+        initialSeed={generateSessionSeed()}
         presetId={presetId}
         tableMinimumCents={tableMinimumCents}
       />

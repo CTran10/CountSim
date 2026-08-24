@@ -14,6 +14,7 @@ import {
   updateTheme
 } from "../lib/theme";
 import styles from "./Shell.module.css";
+import { UpdateChecker } from "./UpdateChecker";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
@@ -105,6 +106,7 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             );
           })}
         </nav>
+        <UpdateChecker />
       </aside>
 
       <header className={styles.mobileHeader}>

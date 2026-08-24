@@ -23,6 +23,13 @@ const SUIT_INITIAL: Readonly<Record<Suit, string>> = {
   spades: "S"
 };
 
+const SUIT_SYMBOL: Readonly<Record<Suit, string>> = {
+  clubs: "♣",
+  diamonds: "♦",
+  hearts: "♥",
+  spades: "♠"
+};
+
 export function formatCents(cents: number, showSign = false): string {
   const sign = showSign && cents > 0 ? "+" : "";
   return `${sign}${new Intl.NumberFormat("en-US", {
@@ -39,4 +46,8 @@ export function cardAsset(card: Card): string {
 
 export function cardLabel(card: Card): string {
   return `${RANK_NAMES[card.rank]} of ${card.suit}`;
+}
+
+export function cardShortLabel(card: Card): string {
+  return `${card.rank}${SUIT_SYMBOL[card.suit]}`;
 }

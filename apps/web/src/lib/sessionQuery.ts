@@ -28,6 +28,19 @@ export interface ParsedSessionQuery {
   readonly tableMinimumCents: number;
 }
 
+export function buildSeededPlayUrl(query: SearchQuery, seed: number): string {
+  const params = new URLSearchParams();
+  for (const [name, value] of Object.entries(query)) {
+    if (typeof value === "string") {
+      params.append(name, value);
+    } else {
+      value?.forEach((item) => params.append(name, item));
+    }
+  }
+  params.set("seed", String(seed));
+  return `/play?${params.toString()}`;
+}
+
 function first(
   value: string | readonly string[] | undefined
 ): string | undefined {

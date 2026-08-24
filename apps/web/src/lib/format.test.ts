@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cardAsset, cardLabel, formatCents } from "./format";
+import { cardAsset, cardLabel, cardShortLabel, formatCents } from "./format";
 
 describe("presentation formatting", () => {
   it("formats neutral and signed virtual balances", () => {
@@ -13,5 +13,6 @@ describe("presentation formatting", () => {
     const card = { id: "fixture", rank: "A", suit: "spades" } as const;
     expect(cardAsset(card)).toBe("/cards/AS.svg");
     expect(cardLabel(card)).toBe("Ace of spades");
+    expect(cardShortLabel(card)).toBe("A♠");
   });
 });

@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { parseSessionQuery } from "./sessionQuery";
+import { buildSeededPlayUrl, parseSessionQuery } from "./sessionQuery";
 
 describe("parseSessionQuery", () => {
+  it("adds a generated seed while preserving the requested session options", () => {
+    expect(
+      buildSeededPlayUrl(
+        { preset: "lodge-6d", mode: ["practice", "decision"] },
+        123
+      )
+    ).toBe("/play?preset=lodge-6d&mode=practice&mode=decision&seed=123");
+  });
+
   it("loads a catalog preset while bounding user limits", () => {
     const parsed = parseSessionQuery({
       preset: "lodge-6d",

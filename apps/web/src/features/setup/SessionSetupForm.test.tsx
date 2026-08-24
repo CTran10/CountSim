@@ -21,7 +21,11 @@ afterEach(() => {
 describe("SessionSetupForm", () => {
   it("persists the selected game when setup opens", async () => {
     render(
-      <SessionSetupForm presetId="ballys-north-dd" tableMinimumCents={1500} />
+      <SessionSetupForm
+        initialSeed={123456789}
+        presetId="ballys-north-dd"
+        tableMinimumCents={1500}
+      />
     );
 
     await waitFor(() => {
@@ -29,11 +33,20 @@ describe("SessionSetupForm", () => {
         "ballys-north-dd"
       );
     });
+    expect(
+      screen.getByRole("spinbutton", { name: "Session seed" })
+    ).toHaveValue(123456789);
   });
 
   it("switches to a compatible mode when an intent needs one", async () => {
     const user = userEvent.setup();
-    render(<SessionSetupForm presetId="lodge-dd" tableMinimumCents={500} />);
+    render(
+      <SessionSetupForm
+        initialSeed={123456789}
+        presetId="lodge-dd"
+        tableMinimumCents={500}
+      />
+    );
 
     expect(screen.getByRole("radio", { name: "Observation" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Discipline" })).toBeChecked();
@@ -64,7 +77,11 @@ describe("SessionSetupForm", () => {
     expect(writeAppData(window.localStorage, customData)).toBe(true);
     const user = userEvent.setup();
     render(
-      <SessionSetupForm presetId="custom-basic-only" tableMinimumCents={500} />
+      <SessionSetupForm
+        initialSeed={123456789}
+        presetId="custom-basic-only"
+        tableMinimumCents={500}
+      />
     );
 
     await user.click(screen.getByRole("radio", { name: "Decision" }));

@@ -83,9 +83,11 @@ function dollarsToCents(value: string): number {
 }
 
 export function SessionSetupForm({
+  initialSeed,
   presetId,
   tableMinimumCents
 }: {
+  readonly initialSeed: number;
   readonly presetId: string;
   readonly tableMinimumCents: number;
 }) {
@@ -440,7 +442,7 @@ export function SessionSetupForm({
           <label>
             <span>Session seed</span>
             <input
-              defaultValue="785390425"
+              defaultValue={initialSeed}
               max="4294967295"
               min="0"
               name="seed"

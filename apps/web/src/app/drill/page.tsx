@@ -4,9 +4,11 @@ import Link from "next/link";
 import { PageHeader } from "../../components/PageHeader";
 import { DrillPicker } from "../../features/drill/DrillPicker";
 import { DrillRunner } from "../../features/drill/DrillRunner";
+import { generateSessionSeed } from "../../lib/seed";
 import styles from "../sections.module.css";
 
 export const metadata: Metadata = { title: "Drills | TrueEdge" };
+export const dynamic = "force-dynamic";
 
 function formatKind(kind: string): string {
   return kind
@@ -36,7 +38,7 @@ export default async function DrillPage({
           summary="A seeded attempt set will reproduce the same prompts, answer key, and score."
           title={formatKind(kind)}
         />
-        <DrillRunner kind={kind} />
+        <DrillRunner initialSeed={generateSessionSeed()} kind={kind} />
       </>
     );
   }

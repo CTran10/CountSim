@@ -17,9 +17,12 @@ afterEach(() => {
 describe("DrillRunner", () => {
   it("scores card value, running count, and true count together", async () => {
     const user = userEvent.setup();
-    const scenario = buildCountPracticeScenario(12_041);
-    render(<DrillRunner kind="count-practice" />);
+    const initialSeed = 93_817;
+    const scenario = buildCountPracticeScenario(initialSeed);
+    expect(scenario.cards.every((card) => /[♣♦♥♠]$/u.test(card))).toBe(true);
+    render(<DrillRunner initialSeed={initialSeed} kind="count-practice" />);
 
+    expect(screen.getByText(`Seed ${initialSeed}`)).toBeVisible();
     expect(
       screen.getByLabelText(
         `Outlined card: ${scenario.cards[scenario.focusIndex]}`
@@ -55,7 +58,7 @@ describe("DrillRunner", () => {
 
   it("trains insurance separately and retains repeated deterministic attempts", async () => {
     const user = userEvent.setup();
-    render(<DrillRunner kind="insurance" />);
+    render(<DrillRunner initialSeed={12_041} kind="insurance" />);
 
     await user.click(screen.getByRole("button", { name: "decline" }));
     await user.click(
@@ -74,7 +77,7 @@ describe("DrillRunner", () => {
 
   it("scores the full mental-load chain as four technical skills plus a bet", async () => {
     const user = userEvent.setup();
-    render(<DrillRunner kind="full-load" />);
+    render(<DrillRunner initialSeed={12_041} kind="full-load" />);
 
     await user.type(screen.getByLabelText("Final RC"), "8");
     await user.type(screen.getByLabelText("Decks remain"), "4");
@@ -112,7 +115,7 @@ describe("DrillRunner", () => {
 
   it("rejects whitespace numeric answers without scoring or persisting", async () => {
     const user = userEvent.setup();
-    render(<DrillRunner kind="running-count" />);
+    render(<DrillRunner initialSeed={12_041} kind="running-count" />);
 
     await user.type(screen.getByRole("textbox", { name: "Your answer" }), " ");
     await user.click(screen.getByRole("button", { name: "Check answer" }));
@@ -129,7 +132,7 @@ describe("DrillRunner", () => {
       throw new DOMException("Blocked", "SecurityError");
     });
     const user = userEvent.setup();
-    render(<DrillRunner kind="insurance" />);
+    render(<DrillRunner initialSeed={12_041} kind="insurance" />);
 
     await user.click(screen.getByRole("button", { name: "decline" }));
 

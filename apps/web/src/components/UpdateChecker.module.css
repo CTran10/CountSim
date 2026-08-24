@@ -1,0 +1,50 @@
+.checker {
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+  padding: 18px 8px 0;
+}
+
+.checker button {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  min-height: 36px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.checker button:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.checker button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.checker button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  min-height: 16px;
+}
+
+.status p {
+  margin: 9px 0 0;
+}
+
+.status a {
+  color: var(--signal);
+  font-weight: 700;
+}

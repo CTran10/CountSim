@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { betUnitsForTrueCount } from "../../lib/betRamp";
+import { cardShortLabel } from "../../lib/format";
 import {
   readBrowserAppData,
   recordSkillAttempt,
@@ -177,9 +178,7 @@ export function buildCountPracticeScenario(
     type: "count-practice",
     prompt: "Value the outlined card, finish the count, then convert it.",
     context: `Start at RC ${signed(startingCount)}. ${decksRemaining.toFixed(1)} decks remain. Truncate the true count.`,
-    cards: drill.cards.map(
-      (card) => `${card.rank}${card.suit[0]!.toUpperCase()}`
-    ),
+    cards: drill.cards.map(cardShortLabel),
     focusIndex,
     cardValue: hiLoValue(focusCard),
     runningCount: drill.finalRunningCount,
@@ -200,9 +199,7 @@ function buildScenario(kind: string, seed: number): Scenario {
       context: "Start at zero. Read every exposed card from left to right.",
       answer: drill.finalRunningCount,
       tolerance: 0,
-      cards: drill.cards.map(
-        (card) => `${card.rank}${card.suit[0]!.toUpperCase()}`
-      )
+      cards: drill.cards.map(cardShortLabel)
     };
   }
 
@@ -286,9 +283,7 @@ function buildScenario(kind: string, seed: number): Scenario {
       type: "full-load",
       prompt: decisionScenario.prompt,
       context: `Start at RC ${signed(startingCount)}. After this exposed-card run, the shoe marker reads ${decksRemaining.toFixed(1)} decks remaining. Use the 1-2-4-6-8 unit ramp for TC 0 or lower through TC +4 or higher.`,
-      cards: run.cards.map(
-        (card) => `${card.rank}${card.suit[0]!.toUpperCase()}`
-      ),
+      cards: run.cards.map(cardShortLabel),
       runningCount,
       decksRemaining,
       trueCount: decisionScenario.trueCount,
@@ -324,8 +319,14 @@ function buildScenario(kind: string, seed: number): Scenario {
   };
 }
 
-export function DrillRunner({ kind }: { readonly kind: string }) {
-  const [seed, setSeed] = useState(12_041);
+export function DrillRunner({
+  initialSeed,
+  kind
+}: {
+  readonly initialSeed: number;
+  readonly kind: string;
+}) {
+  const [seed, setSeed] = useState(initialSeed);
   const [answer, setAnswer] = useState("");
   const [fullAnswers, setFullAnswers] =
     useState<FullLoadAnswers>(EMPTY_FULL_ANSWERS);
