@@ -48,21 +48,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Require Apple release credentials
-        env:
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-        run: >-
-          node -e 'const required = ["APPLE_APP_SPECIFIC_PASSWORD", "APPLE_ID",
-          "APPLE_TEAM_ID", "CSC_KEY_PASSWORD", "CSC_LINK"];
-          const missing = required.filter((name) => !process.env[name]);
-          if (missing.length > 0) {
-            throw new Error(`Missing release secrets: ${missing.join(", ")}`);
-          }'
-
       - name: Verify source
         env:
           NODE_OPTIONS: --no-experimental-webstorage
@@ -75,87 +60,57 @@ jobs:
       - name: Build and stage the web application
         run: pnpm --filter @trueedge/desktop run build:web
 
-      - name: Build, sign, and notarize macOS artifacts
+      - name: Build unsigned macOS DMGs
         env:
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: >-
           pnpm --filter @trueedge/desktop exec electron-builder
-          --mac dmg zip --arm64 --x64 --publish never
+          --mac dmg --arm64 --x64 --publish never
 
-      - name: Verify signatures, notarization, and update metadata
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Verify installers and architectures
         shell: bash
         run: |
           set -euo pipefail
           version=$(node -p 'require("./apps/desktop/package.json").version')
-          designated_requirement=""
-          for app_bundle in "release/mac/TrueEdge.app" "release/mac-arm64/TrueEdge.app"; do
-            codesign --verify --deep --strict --verbose=2 "$app_bundle"
-            spctl --assess --type execute --verbose=4 "$app_bundle"
-            xcrun stapler validate "$app_bundle"
-            signing_details=$(codesign -dv --verbose=4 "$app_bundle" 2>&1)
-            grep -Fq "TeamIdentifier=${APPLE_TEAM_ID}" <<<"$signing_details"
-            grep -Eq '^Authority=Developer ID Application:' <<<"$signing_details"
-            current_requirement=$(codesign -d -r- "$app_bundle" 2>&1 | sed -n 's/^designated => //p')
-            test -n "$current_requirement"
-            if [[ -z "$designated_requirement" ]]; then
-              designated_requirement="$current_requirement"
-            else
-              test "$current_requirement" = "$designated_requirement"
-            fi
+          expected_dmgs=$(printf '%s\n' \
+            "TrueEdge-${version}-mac-arm64.dmg" \
+            "TrueEdge-${version}-mac-x64.dmg" | sort)
+          actual_dmgs=$(find release -maxdepth 1 -type f -name '*.dmg' -exec basename {} \; | sort)
+          test "$actual_dmgs" = "$expected_dmgs"
+
+          for dmg in \
+            "release/TrueEdge-${version}-mac-arm64.dmg" \
+            "release/TrueEdge-${version}-mac-x64.dmg"; do
+            hdiutil verify "$dmg"
           done
-          RELEASE_VERSION="$version" ruby <<'RUBY'
-          require "base64"
-          require "digest"
-          require "yaml"
 
-          version = ENV.fetch("RELEASE_VERSION")
-          names = [
-            "TrueEdge-#{version}-mac-arm64.dmg",
-            "TrueEdge-#{version}-mac-arm64.zip",
-            "TrueEdge-#{version}-mac-x64.dmg",
-            "TrueEdge-#{version}-mac-x64.zip"
-          ]
-          expected_publish_files = (names + names.map { |name| "#{name}.blockmap" } + ["latest-mac.yml"]).sort
-          actual_publish_files = Dir.glob("release/*").select do |path|
-            File.file?(path) && (path.end_with?(".dmg", ".zip", ".blockmap") || File.basename(path) == "latest-mac.yml")
-          end.map { |path| File.basename(path) }.sort
-          raise "Unexpected release artifact set: #{actual_publish_files.inspect}" unless actual_publish_files == expected_publish_files
+          verify_dmg_payload() (
+            set -euo pipefail
+            dmg=$1
+            expected_arch=$2
+            mount_point=$(mktemp -d)
+            cleanup() {
+              hdiutil detach "$mount_point" >/dev/null 2>&1 || true
+              rmdir "$mount_point" >/dev/null 2>&1 || true
+            }
+            trap cleanup EXIT
 
-          metadata = YAML.safe_load(File.read("release/latest-mac.yml"), aliases: false)
-          raise "Update metadata version does not match #{version}" unless metadata["version"] == version
-          files = metadata.fetch("files")
-          entries = files.to_h { |entry| [entry.fetch("url"), entry] }
-          raise "Update metadata has duplicate artifact URLs" unless entries.length == files.length
-          raise "Update metadata artifact set is invalid" unless entries.keys.sort == names.sort
+            hdiutil attach -readonly -nobrowse -mountpoint "$mount_point" "$dmg"
+            app_bundle="$mount_point/TrueEdge.app"
+            plist="$app_bundle/Contents/Info.plist"
+            test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = "$version"
+            test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" = "$version"
+            test "$(lipo -archs "$app_bundle/Contents/MacOS/TrueEdge")" = "$expected_arch"
+          )
 
-          names.each do |name|
-            path = File.join("release", name)
-            entry = entries.fetch(name)
-            expected_digest = Base64.strict_encode64(Digest::SHA512.file(path).digest)
-            raise "Incorrect size for #{name}" unless entry["size"] == File.size(path)
-            raise "Incorrect SHA-512 for #{name}" unless entry["sha512"] == expected_digest
-          end
-
-          primary = metadata.fetch("path")
-          raise "Primary update path must be the x64 ZIP" unless primary == "TrueEdge-#{version}-mac-x64.zip"
-          raise "Primary update digest is invalid" unless metadata["sha512"] == entries.fetch(primary)["sha512"]
-          RUBY
+          verify_dmg_payload "release/TrueEdge-${version}-mac-arm64.dmg" "arm64"
+          verify_dmg_payload "release/TrueEdge-${version}-mac-x64.dmg" "x86_64"
 
       - name: Store verified release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: signed-macos-release-${{ github.sha }}
-          path: |
-            release/*.dmg
-            release/*.zip
-            release/*.blockmap
-            release/latest-mac.yml
+          name: unsigned-macos-dmgs-${{ github.sha }}
+          path: release/*.dmg
           if-no-files-found: error
           retention-days: 7
 
@@ -167,10 +122,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Download verified release artifacts
+      - name: Download verified DMGs
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: signed-macos-release-${{ github.sha }}
+          name: unsigned-macos-dmgs-${{ github.sha }}
           path: release
 
       - name: Publish the GitHub release
@@ -202,26 +157,15 @@ jobs:
 
           gh release create "$GITHUB_REF_NAME" \
             --draft \
-            --generate-notes \
+            --notes "Unsigned macOS installers. On first launch, try opening TrueEdge once, then use System Settings > Privacy & Security > Open Anyway if macOS blocks it." \
             --title "TrueEdge ${GITHUB_REF_NAME#v}" \
             --verify-tag
-          gh release upload "$GITHUB_REF_NAME" \
-            release/*.dmg \
-            release/*.zip \
-            release/*.blockmap \
-            release/latest-mac.yml
+          gh release upload "$GITHUB_REF_NAME" release/*.dmg
 
           version=${GITHUB_REF_NAME#v}
           expected_assets=$(printf '%s\n' \
             "TrueEdge-${version}-mac-arm64.dmg" \
-            "TrueEdge-${version}-mac-arm64.dmg.blockmap" \
-            "TrueEdge-${version}-mac-arm64.zip" \
-            "TrueEdge-${version}-mac-arm64.zip.blockmap" \
-            "TrueEdge-${version}-mac-x64.dmg" \
-            "TrueEdge-${version}-mac-x64.dmg.blockmap" \
-            "TrueEdge-${version}-mac-x64.zip" \
-            "TrueEdge-${version}-mac-x64.zip.blockmap" \
-            "latest-mac.yml" | sort)
+            "TrueEdge-${version}-mac-x64.dmg" | sort)
           actual_assets=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | sort)
           test "$actual_assets" = "$expected_assets"
           test "$(resolve_tag_commit)" = "$GITHUB_SHA"

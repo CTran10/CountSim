@@ -41,11 +41,13 @@ pnpm desktop:dist:mac
 
 `desktop:pack` builds an unpacked application for your current platform.
 
-`desktop:dist:mac` builds separate Intel and Apple Silicon DMG/ZIP artifacts under `release/`. Just send whichever version matches the recipient’s Mac.
+`desktop:dist:mac` builds separate Intel and Apple Silicon DMG installers under `release/`. Just send whichever version matches the recipient’s Mac.
 
 Windows NSIS and Linux AppImage targets are also configured, but should be built on their native OS or a matching CI runner.
 
-Local macOS builds are unsigned. If you want normal click-through distribution without Gatekeeper yelling at people, you’ll need an Apple Developer ID certificate and notarization credentials in the build environment. Those credentials are intentionally never stored in the repo.
+GitHub and local macOS builds are unsigned, so they do not require an Apple Developer account. On first launch, macOS may block the app. Try opening it once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**.
+
+Unsigned macOS apps cannot use Electron’s automatic in-place updater. To update TrueEdge, download the newer DMG from the latest GitHub release and replace the installed app. Normal click-through installation and automatic updates require an Apple Developer ID certificate and notarization.
 
 ## Deterministic simulation CLI
 
