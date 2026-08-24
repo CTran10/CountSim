@@ -60,7 +60,7 @@ jobs:
       - name: Build and stage the web application
         run: pnpm --filter @trueedge/desktop run build:web
 
-      - name: Build unsigned macOS DMGs
+      - name: Build ad-hoc signed macOS DMGs
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: >-
@@ -101,6 +101,11 @@ jobs:
             test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = "$version"
             test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" = "$version"
             test "$(lipo -archs "$app_bundle/Contents/MacOS/TrueEdge")" = "$expected_arch"
+            codesign --verify --deep --strict --verbose=2 "$app_bundle"
+            signing_details=$(codesign -dv --verbose=4 "$app_bundle" 2>&1)
+            grep -Fq 'Signature=adhoc' <<<"$signing_details"
+            grep -Fq 'TeamIdentifier=not set' <<<"$signing_details"
+            ! grep -Eq '^Authority=' <<<"$signing_details"
           )
 
           verify_dmg_payload "release/TrueEdge-${version}-mac-arm64.dmg" "arm64"
@@ -109,7 +114,7 @@ jobs:
       - name: Store verified release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: unsigned-macos-dmgs-${{ github.sha }}
+          name: adhoc-macos-dmgs-${{ github.sha }}
           path: release/*.dmg
           if-no-files-found: error
           retention-days: 7
@@ -125,7 +130,7 @@ jobs:
       - name: Download verified DMGs
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: unsigned-macos-dmgs-${{ github.sha }}
+          name: adhoc-macos-dmgs-${{ github.sha }}
           path: release
 
       - name: Publish the GitHub release
@@ -157,7 +162,7 @@ jobs:
 
           gh release create "$GITHUB_REF_NAME" \
             --draft \
-            --notes "Unsigned macOS installers. On first launch, try opening TrueEdge once, then use System Settings > Privacy & Security > Open Anyway if macOS blocks it." \
+            --notes "Ad-hoc signed macOS installers; no Apple Developer account is required. On first launch, try opening TrueEdge once, then use System Settings > Privacy & Security > Open Anyway because the app is not notarized." \
             --title "TrueEdge ${GITHUB_REF_NAME#v}" \
             --verify-tag
           gh release upload "$GITHUB_REF_NAME" release/*.dmg

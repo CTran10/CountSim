@@ -45,9 +45,9 @@ pnpm desktop:dist:mac
 
 Windows NSIS and Linux AppImage targets are also configured, but should be built on their native OS or a matching CI runner.
 
-GitHub and local macOS builds are unsigned, so they do not require an Apple Developer account. On first launch, macOS may block the app. Try opening it once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**.
+GitHub and local macOS builds are ad-hoc signed, so they do not require an Apple Developer account, but they are not Developer ID signed or notarized. On first launch, macOS may block the app. Try opening it once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**.
 
-Unsigned macOS apps cannot use Electron’s automatic in-place updater. To update TrueEdge, download the newer DMG from the latest GitHub release and replace the installed app. Normal click-through installation and automatic updates require an Apple Developer ID certificate and notarization.
+These builds cannot use Electron’s trusted automatic in-place updater. To update TrueEdge, download the newer DMG from the latest GitHub release and replace the installed app. Normal click-through installation and automatic updates require an Apple Developer ID certificate and notarization.
 
 ## Deterministic simulation CLI
 

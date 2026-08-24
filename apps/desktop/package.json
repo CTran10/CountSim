@@ -1,6 +1,6 @@
 {
   "name": "@trueedge/desktop",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "Offline Electron host for the TrueEdge blackjack training lab",
   "author": "TrueEdge",
@@ -47,7 +47,7 @@
       "category": "public.app-category.education",
       "icon": "build/icon.png",
       "hardenedRuntime": false,
-      "identity": null,
+      "identity": "-",
       "notarize": false,
       "target": [
         "dmg"
