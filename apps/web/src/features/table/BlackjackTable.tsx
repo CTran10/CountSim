@@ -32,6 +32,10 @@ import {
 } from "../../lib/storage";
 import { CardHand } from "./CardHand";
 import {
+  SessionResultScreen,
+  type SessionResultTone
+} from "./SessionResultScreen";
+import {
   TrainingRail,
   deriveDecisionGuide,
   deriveDeviationProfileId,
@@ -57,6 +61,13 @@ interface TableSession {
 
 interface StrategyNotice {
   readonly title: "Basic strategy miss" | "Deviation miss" | "Insurance miss";
+  readonly message: string;
+}
+
+interface SessionResultPresentation {
+  readonly tone: SessionResultTone;
+  readonly kicker: string;
+  readonly title: string;
   readonly message: string;
 }
 
@@ -137,6 +148,53 @@ function resultLabel(outcome: string | undefined): string | undefined {
     : outcome[0]!.toUpperCase() + outcome.slice(1);
 }
 
+function sessionResultPresentation(
+  terminalReason: TerminalReason | null,
+  deltaCents: number,
+  bankrollCents: number
+): SessionResultPresentation {
+  const deltaLabel = formatCents(deltaCents, true);
+  if (terminalReason === "bankroll_depleted" || bankrollCents <= 0) {
+    return {
+      tone: "bankroll-depleted",
+      kicker: "Bankroll depleted",
+      title: "You got absolutely zero'd.",
+      message:
+        "Your practice bankroll is $0. The table did not beat you; it repossessed you. Open the review and find the exact moment dignity left the building."
+    };
+  }
+  if (terminalReason === "maximum_loss") {
+    return {
+      tone: "stop-loss",
+      kicker: "Stop-loss hit",
+      title: "You got rinsed.",
+      message: `The stop-loss had to drag you off the felt at ${deltaLabel}. Review the damage before you run another shoe.`
+    };
+  }
+  if (deltaCents > 0) {
+    return {
+      tone: "win",
+      kicker: "Winning session",
+      title: "Nice work. You finished up.",
+      message: `You booked a ${deltaLabel} practice win and got out. That is the whole job.`
+    };
+  }
+  if (deltaCents < 0) {
+    return {
+      tone: "loss",
+      kicker: "Losing session",
+      title: "The table got paid.",
+      message: `You finished ${deltaLabel}. No heroic reload. Review it and find the leak.`
+    };
+  }
+  return {
+    tone: "flat",
+    kicker: "Session complete",
+    title: "Flat is still a result.",
+    message: "You finished even. Review the decisions, not just the number."
+  };
+}
+
 function accuracy(attempts: number, correct: number): number {
   return attempts === 0 ? 0 : Math.round((correct / attempts) * 100);
 }
@@ -203,6 +261,7 @@ export function BlackjackTable({
   }));
   const [replayVisible, setReplayVisible] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
+  const [sessionResultOpen, setSessionResultOpen] = useState(false);
   const [persistenceError, setPersistenceError] = useState("");
   const [replayStep, setReplayStep] = useState<number | null>(null);
   const [lastFeedback, setLastFeedback] = useState<string | null>(null);
@@ -649,7 +708,22 @@ export function BlackjackTable({
     persistSession(TERMINAL_LABELS[view.terminalReason], key);
   }, [persistSession, seed, view.analytics.handsPlayed, view.terminalReason]);
 
-  const endSessionAndReview = useCallback(() => {
+  const revealSessionResult = useCallback(() => {
+    setEndingSession(true);
+    setPersistenceError("");
+    const terminalReason = view.terminalReason;
+    const completionReason =
+      terminalReason === null
+        ? "Ended by player"
+        : TERMINAL_LABELS[terminalReason];
+    const key = `${seed}:${view.analytics.handsPlayed}:${terminalReason ?? "manual_end"}`;
+    if (persistSession(completionReason, key)) {
+      setSessionResultOpen(true);
+    }
+    setEndingSession(false);
+  }, [persistSession, seed, view.analytics.handsPlayed, view.terminalReason]);
+
+  const openSessionReview = useCallback(() => {
     setEndingSession(true);
     setPersistenceError("");
     const terminalReason = view.terminalReason;
@@ -766,6 +840,15 @@ export function BlackjackTable({
     modePolicy.countPrompts &&
     view.count.cardsSeen > 0 &&
     view.phase !== "stopped";
+  const sessionDeltaCents =
+    view.bankrollCents - state.config.limits.startingBankrollCents;
+  const sessionResult = sessionResultPresentation(
+    view.terminalReason,
+    sessionDeltaCents,
+    view.bankrollCents
+  );
+  const sessionResultVisible =
+    sessionResultOpen || view.terminalReason !== null;
 
   return (
     <div
@@ -773,7 +856,12 @@ export function BlackjackTable({
       data-testid="trueedge-table"
       ref={tableAppRef}
     >
-      <section className={styles.sessionBar} aria-label="Session status">
+      <section
+        aria-hidden={sessionResultVisible ? true : undefined}
+        aria-label="Session status"
+        className={styles.sessionBar}
+        inert={sessionResultVisible ? true : undefined}
+      >
         <div className={styles.primaryMetric}>
           <span>Practice bankroll</span>
           <strong>{formatCents(view.bankrollCents)}</strong>
@@ -799,7 +887,11 @@ export function BlackjackTable({
         </div>
       </section>
 
-      <div className={styles.workspace}>
+      <div
+        aria-hidden={sessionResultVisible ? true : undefined}
+        className={styles.workspace}
+        inert={sessionResultVisible ? true : undefined}
+      >
         <section className={styles.tableColumn} aria-label="Blackjack table">
           <div className={styles.felt}>
             <div className={styles.tableRules}>
@@ -815,6 +907,18 @@ export function BlackjackTable({
                   : `${Math.round(view.shoe.penetration * 100)}% cut`}
               </strong>
             </div>
+
+            {view.result !== null && view.result.profitCents > 0 ? (
+              <div
+                className={styles.handWinCelebration}
+                data-testid="winning-hand-celebration"
+                key={state.round?.handNumber}
+                role="status"
+              >
+                <span>Nice hand</span>
+                <strong>{formatCents(view.result.profitCents, true)}</strong>
+              </div>
+            ) : null}
 
             <CardHand
               cards={view.dealerCards}
@@ -883,6 +987,14 @@ export function BlackjackTable({
                     {...(hand.result === null
                       ? {}
                       : { result: resultLabel(hand.result.outcome)! })}
+                    {...(hand.result === null || hand.result.profitCents === 0
+                      ? {}
+                      : {
+                          resultTone:
+                            hand.result.profitCents > 0
+                              ? ("win" as const)
+                              : ("loss" as const)
+                        })}
                     total={evaluateHand(hand.cards).total}
                   />
                 ))
@@ -1023,7 +1135,12 @@ export function BlackjackTable({
       </div>
 
       {practicePrompts ? (
-        <section className={styles.practicePanel} aria-label="Count practice">
+        <section
+          aria-hidden={sessionResultVisible ? true : undefined}
+          aria-label="Count practice"
+          className={styles.practicePanel}
+          inert={sessionResultVisible ? true : undefined}
+        >
           {[
             [
               "Running count",
@@ -1080,7 +1197,12 @@ export function BlackjackTable({
         </section>
       ) : null}
 
-      <section className={styles.sessionTools} aria-label="Session tools">
+      <section
+        aria-hidden={sessionResultVisible ? true : undefined}
+        aria-label="Session tools"
+        className={styles.sessionTools}
+        inert={sessionResultVisible ? true : undefined}
+      >
         <details>
           <summary>Tighten hard limits</summary>
           <form
@@ -1178,10 +1300,15 @@ export function BlackjackTable({
         )}
       </section>
 
-      <section className={styles.endSessionBar} aria-label="Session completion">
+      <section
+        aria-hidden={sessionResultVisible ? true : undefined}
+        className={styles.endSessionBar}
+        aria-label="Session completion"
+        inert={sessionResultVisible ? true : undefined}
+      >
         <button
           disabled={endingSession}
-          onClick={endSessionAndReview}
+          onClick={revealSessionResult}
           type="button"
         >
           {endingSession
@@ -1192,7 +1319,11 @@ export function BlackjackTable({
         </button>
       </section>
 
-      <footer className={styles.disclaimer}>
+      <footer
+        aria-hidden={sessionResultVisible ? true : undefined}
+        className={styles.disclaimer}
+        inert={sessionResultVisible ? true : undefined}
+      >
         <strong>Training software</strong>
         <span>
           Virtual funds only. No accounts, deposits, or real-money play.
@@ -1201,6 +1332,19 @@ export function BlackjackTable({
           <span role="status">{persistenceError}</span>
         )}
       </footer>
+      {sessionResultVisible ? (
+        <SessionResultScreen
+          bankrollLabel={formatCents(view.bankrollCents)}
+          deltaLabel={formatCents(sessionDeltaCents, true)}
+          error={persistenceError}
+          kicker={sessionResult.kicker}
+          message={sessionResult.message}
+          onReview={openSessionReview}
+          saving={endingSession}
+          title={sessionResult.title}
+          tone={sessionResult.tone}
+        />
+      ) : null}
     </div>
   );
 }

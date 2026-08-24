@@ -33,6 +33,27 @@ function findAutoSettledBlackjackSeed(): number {
   throw new Error("No deterministic blackjack fixture was found.");
 }
 
+function findStandSettledSeed(result: "win" | "loss"): number {
+  for (let seed = 0; seed <= 2_000; seed += 1) {
+    let state = createSession({ ...DEFAULT_SESSION_CONFIG, seed });
+    state = applyCommand(state, {
+      type: "place_bet",
+      amountCents: 500
+    }).state;
+    state = applyCommand(state, { type: "deal" }).state;
+    if (state.phase !== "player") continue;
+    state = applyCommand(state, { type: "stand" }).state;
+    const profitCents = state.round?.result?.profitCents;
+    if (
+      profitCents !== undefined &&
+      (result === "win" ? profitCents > 0 : profitCents < 0)
+    ) {
+      return seed;
+    }
+  }
+  throw new Error(`No deterministic ${result} fixture was found.`);
+}
+
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
@@ -162,7 +183,118 @@ describe("BlackjackTable", () => {
       hands: 1,
       completionReason: "Ended by player"
     });
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeVisible();
+
+    await user.click(
+      screen.getByRole("button", { name: "Open session review" })
+    );
+
     expect(pushMock).toHaveBeenCalledWith("/review");
+  });
+
+  it("outlines winning cards in green and congratulates the player", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable seed={findAutoSettledBlackjackSeed()} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    expect(screen.getAllByTestId("player-card")).not.toHaveLength(0);
+    for (const card of screen.getAllByTestId("player-card")) {
+      expect(card).toHaveAttribute("data-hand-result", "win");
+    }
+    expect(screen.getByTestId("winning-hand-celebration")).toHaveTextContent(
+      "Nice hand"
+    );
+  });
+
+  it("outlines losing cards in red", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable seed={findStandSettledSeed("loss")} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await user.click(screen.getByRole("button", { name: "Stand" }));
+
+    for (const card of screen.getAllByTestId("player-card")) {
+      expect(card).toHaveAttribute("data-hand-result", "loss");
+    }
+  });
+
+  it("celebrates a winning session before opening review", async () => {
+    const user = userEvent.setup();
+    render(<BlackjackTable seed={findAutoSettledBlackjackSeed()} />);
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await user.click(
+      screen.getByRole("button", { name: "End session and review" })
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Nice work. You finished up."
+    });
+    expect(dialog).toHaveAttribute("data-session-result", "win");
+    expect(dialog).toHaveTextContent("Winning session");
+  });
+
+  it("shows the stop-loss roast when the session gets rinsed", async () => {
+    const user = userEvent.setup();
+    const seed = findStandSettledSeed("loss");
+    render(
+      <BlackjackTable
+        config={{
+          ...DEFAULT_SESSION_CONFIG,
+          seed,
+          limits: {
+            ...DEFAULT_SESSION_CONFIG.limits,
+            startingBankrollCents: 1_000,
+            maxBetCents: 500,
+            maxLossCents: 500
+          }
+        }}
+        seed={seed}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await user.click(screen.getByRole("button", { name: "Stand" }));
+
+    const dialog = screen.getByRole("dialog", { name: "You got rinsed." });
+    expect(dialog).toHaveAttribute("data-session-result", "stop-loss");
+    expect(dialog).toHaveTextContent("The stop-loss had to drag you off");
+  });
+
+  it("shows the harsher roast when the practice bankroll hits zero", async () => {
+    const user = userEvent.setup();
+    const seed = findStandSettledSeed("loss");
+    render(
+      <BlackjackTable
+        config={{
+          ...DEFAULT_SESSION_CONFIG,
+          seed,
+          limits: {
+            ...DEFAULT_SESSION_CONFIG.limits,
+            startingBankrollCents: 500,
+            maxBetCents: 500,
+            maxLossCents: 500
+          }
+        }}
+        seed={seed}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Bet $5" }));
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await user.click(screen.getByRole("button", { name: "Stand" }));
+
+    const dialog = screen.getByRole("dialog", {
+      name: "You got absolutely zero'd."
+    });
+    expect(dialog).toHaveAttribute("data-session-result", "bankroll-depleted");
+    expect(dialog).toHaveTextContent("it repossessed you");
   });
 
   it("keeps the previous base wager selected for the next Deal", async () => {
@@ -433,7 +565,12 @@ describe("BlackjackTable", () => {
 
     act(() => vi.advanceTimersByTime(1_000));
     expect(screen.getByText("Duration limit reached")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bet $5" })).toBeDisabled();
+    expect(
+      screen
+        .getByTestId("trueedge-table")
+        .querySelector('[aria-label="Virtual wager choices"] button')
+    ).toBeDisabled();
+    expect(screen.getByRole("dialog")).toBeVisible();
   });
 
   it("retains repeated same-seed sessions as separate history", async () => {
@@ -598,10 +735,9 @@ describe("BlackjackTable", () => {
     await user.click(screen.getByRole("button", { name: "Deal" }));
     await user.click(screen.getByRole("button", { name: "Stand" }));
 
-    expect(
-      await screen.findByText(
-        "Session finished, but browser progress could not be saved."
-      )
-    ).toBeVisible();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("status")).toHaveTextContent(
+      "Session finished, but browser progress could not be saved."
+    );
   });
 });

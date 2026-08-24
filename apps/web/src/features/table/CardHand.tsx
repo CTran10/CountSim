@@ -12,16 +12,19 @@ interface CardHandProps {
   readonly owner: "dealer" | "player";
   readonly active?: boolean;
   readonly result?: string;
+  readonly resultTone?: "win" | "loss";
 }
 
 function PlayingCard({
   card,
   owner,
-  index
+  index,
+  resultTone
 }: {
   readonly card: Card | null;
   readonly owner: CardHandProps["owner"];
   readonly index: number;
+  readonly resultTone: CardHandProps["resultTone"];
 }) {
   const hole = card === null;
   const testId = hole ? "dealer-hole-card" : `${owner}-card`;
@@ -32,8 +35,9 @@ function PlayingCard({
 
   return (
     <div
-      className={`${styles.card} ${owner === "dealer" ? styles.dealerCard : styles.playerCard}`}
+      className={`${styles.card} ${owner === "dealer" ? styles.dealerCard : styles.playerCard} ${resultTone === "win" ? styles.winningCard : resultTone === "loss" ? styles.losingCard : ""}`}
       data-deal-order={dealOrder}
+      data-hand-result={resultTone}
       data-testid={testId}
       style={cardStyle}
     >
@@ -55,7 +59,8 @@ export function CardHand({
   total,
   owner,
   active = false,
-  result
+  result,
+  resultTone
 }: CardHandProps) {
   return (
     <section
@@ -83,6 +88,7 @@ export function CardHand({
               index={index}
               key={card?.id ?? `dealer-hole-${index}`}
               owner={owner}
+              resultTone={resultTone}
             />
           ))
         )}
